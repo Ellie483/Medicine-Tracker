@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Medicines - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-pills me-2 text-primary"></i>Browse Medicines</h2>
+                    <p class="text-muted mb-0">Find and order medicines from nearby pharmacies</p>
+                </div>
+                <div>
+                    <span class="badge bg-info fs-6">{{ medicines|length }} Available</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form id="searchForm" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Search Medicine</label>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Medicine name or description...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Pharmacy</label>
+                            <select id="pharmacyFilter" class="form-select">
+                                <option value="">All Pharmacies</option>
+                                {% for pharmacy in pharmacies %}
+                                <option value="{{ pharmacy.pharmacy_name }}">{{ pharmacy.pharmacy_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Max Price</label>
+                            <input type="number" id="priceFilter" class="form-control" placeholder="0.00" step="0.01">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Category</label>
+                            <select id="categoryFilter" class="form-select">
+                                <option value="">All Categories</option>
+                                <option value="painkiller">Painkiller</option>
+                                <option value="antibiotic">Antibiotic</option>
+                                <option value="vitamin">Vitamin</option>
+                                <option value="supplement">Supplement</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" onclick="clearFilters()" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medicines Grid -->
+    <div class="row" id="medicinesContainer">
+        {% for medicine in medicines %}
+        <div class="col-lg-4 col-md-6 mb-4 medicine-card" 
+             data-name="{{ medicine.name.lower() }}" 
+             data-pharmacy="{{ medicine.pharmacy_name }}" 
+             data-price="{{ medicine.price }}"
+             data-description="{{ medicine.description.lower() }}">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">{{ medicine.name }}</h5>
+                        {% if medicine.is_expired %}
+                        <span class="badge bg-danger">Expired</span>
+                        {% else %}
+                        <span class="badge bg-success">Available</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="text-muted small mb-2">{{ medicine.description or 'No description available' }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-primary fw-bold fs-5">{{ medicine.formatted_price }}</span>
+                            <span class="text-muted small">Stock: {{ medicine.stock }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="fas fa-store me-2"></i>
+                            <span>{{ medicine.pharmacy_name }}</span>
+                        </div>
+                        <div class="d-flex align-items-center text-muted small mt-1">
+                            <i class="fas fa-calendar me-2"></i>
+                            <span>Expires: {{ medicine.expiration_date }}</span>
+                        </div>
+                    </div>
+
+                    {% if not medicine.is_expired and medicine.stock > 0 %}
+                    <div class="d-flex gap-2">
+                        <div class="flex-grow-1">
+                            <input type="number" class="form-control form-control-sm" 
+                                   id="quantity_{{ medicine._id }}" 
+                                   value="1" min="1" max="{{ medicine.stock }}" 
+                                   placeholder="Qty">
+                        </div>
+                        <button class="btn btn-primary btn-sm" 
+                                onclick="addToCart('{{ medicine._id }}')">
+                            <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                        </button>
+                    </div>
+                    {% else %}
+                    <button class="btn btn-secondary btn-sm w-100" disabled>
+                        <i class="fas fa-times me-1"></i>Unavailable
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" class="text-center py-5" style="display: none;">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No medicines found</h4>
+        <p class="text-muted">Try adjusting your search criteria</p>
+    </div>
+</div>
+
+<script>
+// Search and filter functionality
+function filterMedicines() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const pharmacyFilter = document.getElementById('pharmacyFilter').value;
+    const priceFilter = parseFloat(document.getElementById('priceFilter').value) || Infinity;
+    const categoryFilter = document.getElementById('categoryFilter').value.toLowerCase();
+    
+    const medicineCards = document.querySelectorAll('.medicine-card');
+    let visibleCount = 0;
+    
+    medicineCards.forEach(card => {
+        const name = card.dataset.name;
+        const description = card.dataset.description;
+        const pharmacy = card.dataset.pharmacy;
+        const price = parseFloat(card.dataset.price);
+        
+        const matchesSearch = !searchTerm || name.includes(searchTerm) || description.includes(searchTerm);
+        const matchesPharmacy = !pharmacyFilter || pharmacy === pharmacyFilter;
+        const matchesPrice = price <= priceFilter;
+        const matchesCategory = !categoryFilter || description.includes(categoryFilter) || name.includes(categoryFilter);
+        
+        if (matchesSearch && matchesPharmacy && matchesPrice && matchesCategory) {
+            card.style.display = 'block';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Show/hide no results message
+    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('pharmacyFilter').value = '';
+    document.getElementById('priceFilter').value = '';
+    document.getElementById('categoryFilter').value = '';
+    filterMedicines();
+}
+
+// Add event listeners
+document.getElementById('searchInput').addEventListener('input', filterMedicines);
+document.getElementById('pharmacyFilter').addEventListener('change', filterMedicines);
+document.getElementById('priceFilter').addEventListener('input', filterMedicines);
+document.getElementById('categoryFilter').addEventListener('change', filterMedicines);
+
+// Add to cart functionality
+async function addToCart(medicineId) {
+    const quantity = document.getElementById(`quantity_${medicineId}`).value;
+    
+    try {
+        const response = await fetch('/add_to_cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `medicine_id=${medicineId}&quantity=${quantity}`
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+                // Show success message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                toast.style.zIndex = '9999';
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-check me-2"></i>Added to cart successfully!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', () => {
+                    document.body.removeChild(toast);
+                });
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } else {
+            alert('Failed to add to cart. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+</script>
+
+<style>
+.medicine-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.medicine-card:hover {
+    transform: translateY(-2px);
+}
+
+.card {
+    border-radius: 10px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+</style>
+{% endblock %}

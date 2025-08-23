@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Pharmacy Information - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-store-alt me-2 text-primary"></i>Pharmacy Information</h2>
+                    <p class="text-muted mb-0">Update your pharmacy details and operating information</p>
+                </div>
+                <div>
+                    <a href="/seller/home" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Pharmacy Details -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-store me-2 text-primary"></i>Pharmacy Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="/seller/profile/update" method="POST">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="pharmacy_name" class="form-label">Pharmacy Name</label>
+                                <input type="text" class="form-control" id="pharmacy_name" name="pharmacy_name" 
+                                       value="{{ profile.pharmacy_name if profile else '' }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="license_number" class="form-label">License Number</label>
+                                <input type="text" class="form-control" id="license_number" name="license_number" 
+                                       value="{{ profile.license_number if profile else '' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Pharmacy Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="3" required>{{ profile.address if profile else '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="contact_info" class="form-label">Contact Information</label>
+                                <input type="text" class="form-control" id="contact_info" name="contact_info" 
+                                       value="{{ profile.contact_info if profile else '' }}" 
+                                       placeholder="+91 9876543210" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="operating_hours" class="form-label">Operating Hours</label>
+                                <input type="text" class="form-control" id="operating_hours" name="operating_hours" 
+                                       value="{{ profile.operating_hours if profile else '' }}" 
+                                       placeholder="9:00 AM - 10:00 PM" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address (Optional)</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ profile.email if profile and profile.email else '' }}" 
+                                       placeholder="pharmacy@example.com">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="website" class="form-label">Website (Optional)</label>
+                                <input type="url" class="form-control" id="website" name="website" 
+                                       value="{{ profile.website if profile and profile.website else '' }}" 
+                                       placeholder="https://www.yourpharmacy.com">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Pharmacy Description (Optional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" 
+                                      placeholder="Brief description of your pharmacy services...">{{ profile.description if profile and profile.description else '' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/seller/home" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2 text-success"></i>Account Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Username</label>
+                            <div class="form-control-plaintext">{{ current_user.username }}</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Account Type</label>
+                            <div class="form-control-plaintext">
+                                <span class="badge bg-info">{{ current_user.role.title() }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Member Since</label>
+                        <div class="form-control-plaintext">
+                            {% if profile and profile.created_at %}
+                                {{ profile.created_at.strftime('%B %d, %Y') }}
+                            {% else %}
+                                Not available
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Business Statistics -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2 text-info"></i>Business Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="border-end">
+                                <div class="fw-bold text-primary fs-4">0</div>
+                                <small class="text-muted">Total Medicines</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border-end">
+                                <div class="fw-bold text-success fs-4">0</div>
+                                <small class="text-muted">Orders Received</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border-end">
+                                <div class="fw-bold text-warning fs-4">₹0</div>
+                                <small class="text-muted">Total Revenue</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="fw-bold text-info fs-4">4.8</div>
+                            <small class="text-muted">Average Rating</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services & Features -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2 text-secondary"></i>Services & Features
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="/seller/services/update" method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Available Services</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="home_delivery" name="services" value="home_delivery">
+                                    <label class="form-check-label" for="home_delivery">
+                                        <i class="fas fa-truck me-2 text-success"></i>Home Delivery
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="online_consultation" name="services" value="online_consultation">
+                                    <label class="form-check-label" for="online_consultation">
+                                        <i class="fas fa-video me-2 text-primary"></i>Online Consultation
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="prescription_upload" name="services" value="prescription_upload">
+                                    <label class="form-check-label" for="prescription_upload">
+                                        <i class="fas fa-file-upload me-2 text-info"></i>Prescription Upload
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="insurance_accepted" name="services" value="insurance_accepted">
+                                    <label class="form-check-label" for="insurance_accepted">
+                                        <i class="fas fa-shield-alt me-2 text-warning"></i>Insurance Accepted
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Specializations</h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="general_medicines" name="specializations" value="general_medicines">
+                                    <label class="form-check-label" for="general_medicines">
+                                        <i class="fas fa-pills me-2 text-primary"></i>General Medicines
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="ayurvedic" name="specializations" value="ayurvedic">
+                                    <label class="form-check-label" for="ayurvedic">
+                                        <i class="fas fa-leaf me-2 text-success"></i>Ayurvedic Medicines
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="pediatric" name="specializations" value="pediatric">
+                                    <label class="form-check-label" for="pediatric">
+                                        <i class="fas fa-baby me-2 text-info"></i>Pediatric Care
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="elderly_care" name="specializations" value="elderly_care">
+                                    <label class="form-check-label" for="elderly_care">
+                                        <i class="fas fa-user-friends me-2 text-secondary"></i>Elderly Care
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end mt-3">
+                            <button type="submit" class="btn btn-outline-primary">
+                                <i class="fas fa-save me-1"></i>Update Services
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 10px;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+@media (max-width: 768px) {
+    .border-end {
+        border-right: none !important;
+        border-bottom: 1px solid #dee2e6 !important;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-check-label {
+    cursor: pointer;
+}
+</style>
+{% endblock %}

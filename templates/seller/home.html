@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Seller Dashboard - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-store me-2 text-primary"></i>Welcome back!</h2>
+                    <p class="text-muted mb-0">Manage your pharmacy and track your business</p>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">{{ current_user.username }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-pills fa-3x text-primary"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary">{{ total_medicines }}</h3>
+                    <p class="text-muted mb-3">Total Medicines</p>
+                    <a href="/seller/inventory" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-boxes me-1"></i>Manage Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-shopping-cart fa-3x text-success"></i>
+                    </div>
+                    <h3 class="fw-bold text-success">{{ orders_received }}</h3>
+                    <p class="text-muted mb-3">Orders Received</p>
+                    <a href="/seller/orders" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-clipboard-list me-1"></i>View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning">{{ low_stock_count }}</h3>
+                    <p class="text-muted mb-3">Low Stock Alerts</p>
+                    <a href="/seller/inventory?filter=low_stock" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-eye me-1"></i>Check Stock
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Actions -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="/seller/add-medicine" class="btn btn-primary w-100 p-3">
+                                <i class="fas fa-plus-circle fa-2x mb-2 d-block"></i>
+                                <strong>Add New Medicine</strong>
+                                <small class="d-block text-white-50">Add medicines to your inventory</small>
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="/seller/inventory" class="btn btn-info w-100 p-3">
+                                <i class="fas fa-boxes fa-2x mb-2 d-block"></i>
+                                <strong>Manage Inventory</strong>
+                                <small class="d-block text-white-50">Update stock and prices</small>
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="/seller/orders" class="btn btn-success w-100 p-3">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 d-block"></i>
+                                <strong>Process Orders</strong>
+                                <small class="d-block text-white-50">View and confirm orders</small>
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="/seller/profile-edit" class="btn btn-secondary w-100 p-3">
+                                <i class="fas fa-store-alt fa-2x mb-2 d-block"></i>
+                                <strong>Pharmacy Info</strong>
+                                <small class="d-block text-white-50">Update pharmacy details</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2 text-info"></i>Recent Orders
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_orders %}
+                        {% for order in recent_orders %}
+                        <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                            <div class="me-3">
+                                <i class="fas fa-receipt text-success"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Order #{{ order._id|string|truncate(8, true, '...') }}</h6>
+                                <small class="text-muted">{{ order.created_at.strftime('%b %d, %Y') }}</small>
+                                <div class="mt-1">
+                                    <span class="badge bg-{{ 'success' if order.status == 'confirmed' else 'warning' }} badge-sm">
+                                        {{ order.status.title() }}
+                                    </span>
+                                    <span class="text-success fw-bold ms-2">₹{{ "%.2f"|format(order.total_amount) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <a href="/seller/orders" class="btn btn-outline-success btn-sm w-100">
+                            <i class="fas fa-list me-1"></i>View All Orders
+                        </a>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-clipboard-list fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-3">No recent orders</p>
+                            <small class="text-muted">Orders will appear here when customers place them</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Insights -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>Business Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="border-end">
+                                <div class="fw-bold text-primary fs-4">{{ total_medicines }}</div>
+                                <small class="text-muted">Total Medicines</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border-end">
+                                <div class="fw-bold text-success fs-4">{{ orders_received }}</div>
+                                <small class="text-muted">Total Orders</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border-end">
+                                <div class="fw-bold text-warning fs-4">{{ low_stock_count }}</div>
+                                <small class="text-muted">Low Stock Items</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="fw-bold text-info fs-4">4.8</div>
+                            <small class="text-muted">Average Rating</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+    border-radius: 10px;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.btn {
+    transition: all 0.2s ease-in-out;
+    border-radius: 8px;
+}
+
+.border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+@media (max-width: 768px) {
+    .border-end {
+        border-right: none !important;
+        border-bottom: 1px solid #dee2e6 !important;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+.badge-sm {
+    font-size: 0.7em;
+}
+</style>
+{% endblock %}

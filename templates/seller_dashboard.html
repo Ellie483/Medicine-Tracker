@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Seller Dashboard - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-store me-2"></i>{{ pharmacy.pharmacy_name }}</h2>
+            <span class="badge bg-success">Seller Dashboard</span>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ medicines|length }}</h4>
+                        <p class="mb-0">Total Medicines</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-pills fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ orders|length }}</h4>
+                        <p class="mb-0">Total Orders</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-bag fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ low_stock_medicines|length }}</h4>
+                        <p class="mb-0">Low Stock</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ pharmacy.license_number }}</h4>
+                        <p class="mb-0">License #</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-certificate fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if low_stock_medicines %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h5>
+            <p class="mb-0">The following medicines are running low on stock:</p>
+            <ul class="mb-0 mt-2">
+                {% for medicine in low_stock_medicines %}
+                <li>{{ medicine.name }} - Only {{ medicine.stock }} left</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-pills me-2"></i>Medicine Inventory</h5>
+                <a href="/seller/add_medicine" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus me-2"></i>Add Medicine
+                </a>
+            </div>
+            <div class="card-body">
+                {% if medicines %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Stock</th>
+                                <th>Price</th>
+                                <th>Expiration</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for medicine in medicines %}
+                            <tr>
+                                <td>{{ medicine.name }}</td>
+                                <td>
+                                    <span class="badge bg-{% if medicine.stock <= 10 %}danger{% elif medicine.stock <= 50 %}warning{% else %}success{% endif %}">
+                                        {{ medicine.stock }}
+                                    </span>
+                                </td>
+                                <td>₹{{ "%.2f"|format(medicine.price) }}</td>
+                                <td>{{ medicine.expiration_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if medicine.expiration_date < current_time %}
+                                        <span class="badge bg-danger">Expired</span>
+                                    {% elif medicine.stock <= 10 %}
+                                        <span class="badge bg-warning">Low Stock</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Available</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-pills fa-3x text-muted mb-3"></i>
+                    <h5>No medicines added yet</h5>
+                    <p class="text-muted">Start by adding your first medicine to the inventory.</p>
+                    <a href="/seller/add_medicine" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>Add First Medicine
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-shopping-bag me-2"></i>Recent Orders</h5>
+            </div>
+            <div class="card-body">
+                {% if orders %}
+                {% for order in orders[:5] %}
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <small class="fw-bold">Order #{{ order._id|string|truncate(8, True, '...') }}</small>
+                        <small class="text-muted">{{ order.created_at.strftime('%m/%d') }}</small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small>₹{{ "%.2f"|format(order.total_amount) }}</small>
+                        <span class="badge bg-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% else %}success{% endif %} badge-sm">
+                            {{ order.status.title() }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-shopping-bag fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">No orders yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Pharmacy Info</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Contact:</strong><br>{{ pharmacy.contact_info }}</p>
+                <p><strong>Address:</strong><br>{{ pharmacy.address }}</p>
+                <p><strong>Hours:</strong><br>{{ pharmacy.operating_hours }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Pharmacy Registration - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-store me-2"></i>Pharmacy Registration</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Please complete your pharmacy profile to access the seller dashboard.</p>
+                
+                <form method="post" action="/seller/profile">
+                    <div class="mb-3">
+                        <label for="pharmacy_name" class="form-label">Pharmacy Name *</label>
+                        <input type="text" class="form-control" id="pharmacy_name" name="pharmacy_name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="license_number" class="form-label">License Number *</label>
+                        <input type="text" class="form-control" id="license_number" name="license_number" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="contact_info" class="form-label">Contact Information *</label>
+                        <textarea class="form-control" id="contact_info" name="contact_info" rows="3" 
+                                  placeholder="Phone, Email, etc." required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address *</label>
+                        <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="operating_hours" class="form-label">Operating Hours *</label>
+                        <input type="text" class="form-control" id="operating_hours" name="operating_hours" 
+                               placeholder="e.g., Mon-Sat: 9AM-9PM, Sun: 10AM-6PM" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-save me-2"></i>Complete Registration
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

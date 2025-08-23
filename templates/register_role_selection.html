@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Choose Role | Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3><i class="fas fa-user-plus me-2"></i>Create Account</h3>
+                    <p class="mb-0">Choose your role to get started</p>
+                </div>
+                <div class="card-body p-5">
+                    <div class="row">
+                        <!-- Buyer Registration -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user fa-4x text-info"></i>
+                                    </div>
+                                    <h4 class="card-title text-info">Buyer</h4>
+                                    <p class="card-text">
+                                        Register as a buyer to:
+                                    </p>
+                                    <!--ul class="list-unstyled text-start">
+                                        <li><i class="fas fa-check text-success me-2"></i>Search for medicines</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Find nearby pharmacies</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Place orders online</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Track order status</li>
+                                    </ul-->
+                                </div>
+                                <div class="card-footer">
+                                    <a href="/register/buyer" class="btn btn-info btn-lg w-100">
+                                        <i class="fas fa-arrow-right me-2"></i>Register as Buyer
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seller Registration -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-store fa-4x text-success"></i>
+                                    </div>
+                                    <h4 class="card-title text-success">Pharmacy</h4>
+                                    <p class="card-text">
+                                        Register as a pharmacy to:
+                                    </p>
+                                    <!--ul class="list-unstyled text-start">
+                                        <li><i class="fas fa-check text-success me-2"></i>Manage medicine inventory</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Receive customer orders</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Update stock levels</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Track sales analytics</li>
+                                    </ul-->
+                                </div>
+                                <div class="card-footer">
+                                    <a href="/register/seller" class="btn btn-success btn-lg w-100">
+                                        <i class="fas fa-arrow-right me-2"></i>Register as Pharmacy
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            Already have an account? 
+                            <a href="/" class="text-decoration-none">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

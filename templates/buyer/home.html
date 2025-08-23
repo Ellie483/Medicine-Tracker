@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-home me-2 text-primary"></i>Welcome back, {{ buyer.name }}!</h2>
+                    <p class="text-muted mb-0">Find medicines and manage your health needs</p>
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">{{ current_user.username }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-pills fa-3x text-primary"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary">{{ medicines_count }}</h3>
+                    <p class="text-muted mb-3">Available Medicines</p>
+                    <a href="/buyer/medicines" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-search me-1"></i>Browse Now
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-shopping-cart fa-3x text-success"></i>
+                    </div>
+                    <h3 class="fw-bold text-success">{{ orders_count }}</h3>
+                    <p class="text-muted mb-3">My Orders</p>
+                    <a href="/buyer/orders" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-list me-1"></i>View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-store fa-3x text-info"></i>
+                    </div>
+                    <h3 class="fw-bold text-info">{{ recent_pharmacies|length }}</h3>
+                    <p class="text-muted mb-3">Recent Pharmacies</p>
+                    <a href="/buyer/pharmacies" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-map-marker-alt me-1"></i>Find More
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Search -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2 text-primary"></i>Quick Medicine Search
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="/buyer/medicines" method="GET" class="d-flex gap-2">
+                        <input type="text" name="search" class="form-control" placeholder="Search for medicines..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                    <small class="text-muted">Search by medicine name, category, or pharmacy</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Pharmacies -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2 text-info"></i>Recent Pharmacies
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_pharmacies %}
+                        {% for pharmacy in recent_pharmacies %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-3">
+                                <i class="fas fa-store text-info"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ pharmacy.pharmacy_name }}</h6>
+                                <small class="text-muted">{{ pharmacy.address[:30] }}...</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <a href="/buyer/pharmacies" class="btn btn-outline-info btn-sm w-100">
+                            <i class="fas fa-plus me-1"></i>View All Pharmacies
+                        </a>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-store fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-3">No recent pharmacies</p>
+                            <a href="/buyer/pharmacies" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-search me-1"></i>Find Pharmacies
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="/buyer/medicines" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-pills me-2"></i>Browse Medicines
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="/buyer/orders" class="btn btn-outline-success w-100">
+                                <i class="fas fa-shopping-cart me-2"></i>My Orders
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="/buyer/pharmacies" class="btn btn-outline-info w-100">
+                                <i class="fas fa-store me-2"></i>Find Pharmacies
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="/buyer/profile-edit" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-user-edit me-2"></i>Edit Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+</style>
+{% endblock %}

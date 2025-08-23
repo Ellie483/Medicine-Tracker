@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Buyer Profile - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="fas fa-user me-2"></i>Complete Your Profile</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">Please complete your profile to access the buyer dashboard and search for medicines.</p>
+                
+                <form method="post" action="/buyer/profile">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="age" class="form-label">Age *</label>
+                        <input type="number" class="form-control" id="age" name="age" min="1" max="120" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address *</label>
+                        <textarea class="form-control" id="address" name="address" rows="3" 
+                                  placeholder="Your complete address for location-based pharmacy search" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-info w-100">
+                        <i class="fas fa-save me-2"></i>Complete Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

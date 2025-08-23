@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Register as Buyer | Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white text-center">
+                    <h3><i class="fas fa-user-plus me-2"></i>Register as Buyer</h3>
+                    <p class="mb-0">Create your buyer account</p>
+                </div>
+                <div class="card-body p-4">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="/register/buyer">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user me-1"></i>Username *
+                            </label>
+                            <input type="text" class="form-control" id="username" name="username" required 
+                                   placeholder="Choose a unique username">
+                            <div class="form-text">This will be used to log in to your account</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>Password *
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" required 
+                                   placeholder="Enter a secure password" minlength="6">
+                            <div class="form-text">Password must be at least 6 characters long</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                <i class="fas fa-id-card me-1"></i>Full Name *
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="Enter your full name">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="age" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>Age *
+                            </label>
+                            <input type="number" class="form-control" id="age" name="age" required 
+                                   min="1" max="120" placeholder="Enter your age">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="address" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>Address *
+                            </label>
+                            <textarea class="form-control" id="address" name="address" rows="3" required 
+                                      placeholder="Enter your complete address"></textarea>
+                            <div class="form-text">This helps us find nearby pharmacies for you</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-info btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Buyer Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            Want to register as a pharmacy instead? 
+                            <a href="/register/seller" class="text-decoration-none">Click here</a>
+                        </p>
+                        <p class="text-muted">
+                            Already have an account? 
+                            <a href="/" class="text-decoration-none">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const password = document.getElementById('password');
+    const age = document.getElementById('age');
+    
+    form.addEventListener('submit', function(e) {
+        if (password.value.length < 6) {
+            e.preventDefault();
+            alert('Password must be at least 6 characters long');
+            password.focus();
+            return;
+        }
+        
+        if (age.value < 1 || age.value > 120) {
+            e.preventDefault();
+            alert('Please enter a valid age between 1 and 120');
+            age.focus();
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

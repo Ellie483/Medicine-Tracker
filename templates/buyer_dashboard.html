@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Buyer Dashboard - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-shopping-cart me-2"></i>Welcome, {{ buyer.name }}</h2>
+            <span class="badge bg-info">Buyer Dashboard</span>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ medicines|length }}</h4>
+                        <p class="mb-0">Available Medicines</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-pills fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ pharmacies|length }}</h4>
+                        <p class="mb-0">Nearby Pharmacies</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-store fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ orders|length }}</h4>
+                        <p class="mb-0">My Orders</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-bag fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ buyer.age }}</h4>
+                        <p class="mb-0">Age</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-search me-2"></i>Search Medicines</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search for medicines...">
+                        <button class="btn btn-primary" type="button" onclick="searchMedicines()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="searchResults">
+                    <div class="row" id="medicineGrid">
+                        {% for medicine in medicines %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card medicine-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">{{ medicine.name }}</h6>
+                                        <span class="badge bg-success">₹{{ "%.2f"|format(medicine.price) }}</span>
+                                    </div>
+                                    <p class="card-text small text-muted mb-2">
+                                        Stock: {{ medicine.stock }} | 
+                                        Exp: {{ medicine.expiration_date.strftime('%Y-%m-%d') }}
+                                    </p>
+                                    {% if medicine.description %}
+                                    <p class="card-text small">{{ medicine.description[:100] }}...</p>
+                                    {% endif %}
+                                    <form method="post" action="/buyer/add_to_cart" class="d-flex gap-2 align-items-center">
+                                        <input type="hidden" name="medicine_id" value="{{ medicine._id }}">
+                                        <input type="number" name="quantity" class="form-control form-control-sm" 
+                                               value="1" min="1" max="{{ medicine.stock }}" style="width: 80px;">
+                                        <button type="submit" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-cart-plus"></i> Add to Cart
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if not medicines %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-pills fa-3x text-muted mb-3"></i>
+                        <h5>No medicines available</h5>
+                        <p class="text-muted">Check back later for available medicines.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-map-marker-alt me-2"></i>Nearby Pharmacies</h5>
+            </div>
+            <div class="card-body">
+                {% if pharmacies %}
+                {% for pharmacy in pharmacies %}
+                <div class="border-bottom pb-2 mb-2">
+                    <h6 class="mb-1">{{ pharmacy.pharmacy_name }}</h6>
+                    <p class="small text-muted mb-1">{{ pharmacy.address }}</p>
+                    <p class="small mb-1">
+                        <i class="fas fa-clock"></i> {{ pharmacy.operating_hours }}
+                    </p>
+                    <p class="small mb-0">
+                        <i class="fas fa-phone"></i> {{ pharmacy.contact_info }}
+                    </p>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-store fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">No pharmacies registered yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-shopping-bag me-2"></i>Recent Orders</h5>
+            </div>
+            <div class="card-body">
+                {% if orders %}
+                {% for order in orders[:5] %}
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="d-flex justify-content-between">
+                        <small class="fw-bold">Order #{{ order._id|string|truncate(8, True, '...') }}</small>
+                        <small class="text-muted">{{ order.created_at.strftime('%m/%d') }}</small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small>₹{{ "%.2f"|format(order.total_amount) }}</small>
+                        <span class="badge bg-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% else %}success{% endif %} badge-sm">
+                            {{ order.status.title() }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-shopping-bag fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">No orders yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-user me-2"></i>My Profile</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ buyer.name }}</p>
+                <p><strong>Age:</strong> {{ buyer.age }}</p>
+                <p><strong>Address:</strong><br>{{ buyer.address }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function searchMedicines() {
+    const searchTerm = document.getElementById('searchInput').value;
+    // In a real application, this would make an AJAX call
+    // For now, we'll just filter the existing medicines
+    const medicineCards = document.querySelectorAll('.medicine-card');
+    medicineCards.forEach(card => {
+        const medicineName = card.querySelector('.card-title').textContent.toLowerCase();
+        if (medicineName.includes(searchTerm.toLowerCase())) {
+            card.parentElement.style.display = 'block';
+        } else {
+            card.parentElement.style.display = 'none';
+        }
+    });
+}
+
+// Allow search on Enter key
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchMedicines();
+    }
+});
+</script>
+{% endblock %}

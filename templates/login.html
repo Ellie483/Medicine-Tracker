@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-pills fa-3x text-primary mb-3"></i>
+                    <h3 class="card-title">💊 Medicine Tracker</h3>
+                    <p class="text-muted">Login to your account</p>
+                </div>
+
+                <form method="post" action="/login">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </button>
+                </form>
+
+                <!-- Registration Section -->
+                <div class="text-center mt-4">
+                    <hr>
+                    <p class="text-muted mb-3">Don't have an account?</p>
+                    <a href="/register" class="btn btn-success w-100">
+                        <i class="fas fa-user-plus me-2"></i>Create New Account
+                    </a>
+                </div>
+
+                <!--div class="mt-4">
+                    <h6 class="text-center mb-3">Test Accounts:</h6>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body p-2">
+                                    <small class="fw-bold">Admin</small><br>
+                                    <small>admin/admin</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body p-2">
+                                    <small class="fw-bold">Seller</small><br>
+                                    <small>seller/seller</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="card bg-light">
+                                <div class="card-body p-2">
+                                    <small class="fw-bold">Buyer</small><br>
+                                    <small>buyer/buyer</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div-->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

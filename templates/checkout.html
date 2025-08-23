@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-credit-card me-2"></i>Checkout</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Order Summary</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p><strong>Order ID:</strong> #{{ order._id|string|truncate(8, True, '...') }}</p>
+                                <p><strong>Total Amount:</strong> <span class="text-success fs-4">₹{{ "%.2f"|format(order.total_amount) }}</span></p>
+                                <p><strong>Status:</strong> 
+                                    <span class="badge bg-warning">{{ order.status.title() }}</span>
+                                </p>
+                                <p><strong>Payment Status:</strong> 
+                                    <span class="badge bg-{% if order.payment_status == 'paid' %}success{% else %}warning{% endif %}">
+                                        {{ order.payment_status.title() }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <h6>Order Items:</h6>
+                            {% for item in order.medicines %}
+                            <div class="d-flex justify-content-between border-bottom py-2">
+                                <span>Medicine (Qty: {{ item.quantity }})</span>
+                                <span>₹{{ "%.2f"|format(item.price * item.quantity) }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5>Payment</h5>
+                        <div class="text-center">
+                            {% if order.qr_code_path %}
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Scan QR Code to Pay</h6>
+                                    <img src="/{{ order.qr_code_path }}" alt="Payment QR Code" class="img-fluid" style="max-width: 200px;">
+                                    <p class="small text-muted mt-2">
+                                        Scan this QR code with your payment app to complete the transaction.
+                                    </p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mt-3">
+                                {% if order.payment_status == 'pending' %}
+                                <form method="post" action="/buyer/confirm_payment/{{ order._id }}">
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-check me-2"></i>Confirm Payment
+                                    </button>
+                                </form>
+                                <p class="small text-muted mt-2">
+                                    Click "Confirm Payment" after completing the payment via QR code.
+                                </p>
+                                {% else %}
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle me-2"></i>Payment Confirmed!
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <a href="/buyer/dashboard" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Register as Pharmacy | Medicine Tracker{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white text-center">
+                    <h3><i class="fas fa-store me-2"></i>Register as Pharmacy</h3>
+                    <p class="mb-0">Create your pharmacy account</p>
+                </div>
+                <div class="card-body p-4">
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="/register/seller">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">
+                                        <i class="fas fa-user me-1"></i>Username *
+                                    </label>
+                                    <input type="text" class="form-control" id="username" name="username" required 
+                                           placeholder="Choose a unique username">
+                                    <div class="form-text">This will be used to log in to your account</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock me-1"></i>Password *
+                                    </label>
+                                    <input type="password" class="form-control" id="password" name="password" required 
+                                           placeholder="Enter a secure password" minlength="6">
+                                    <div class="form-text">Password must be at least 6 characters long</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pharmacy_name" class="form-label">
+                                        <i class="fas fa-store me-1"></i>Pharmacy Name *
+                                    </label>
+                                    <input type="text" class="form-control" id="pharmacy_name" name="pharmacy_name" required 
+                                           placeholder="Enter your pharmacy name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="license_number" class="form-label">
+                                        <i class="fas fa-certificate me-1"></i>License Number *
+                                    </label>
+                                    <input type="text" class="form-control" id="license_number" name="license_number" required 
+                                           placeholder="Enter pharmacy license number">
+                                    <div class="form-text">Must be a valid pharmacy license</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="contact_info" class="form-label">
+                                <i class="fas fa-phone me-1"></i>Contact Information *
+                            </label>
+                            <input type="text" class="form-control" id="contact_info" name="contact_info" required 
+                                   placeholder="Phone number, email, etc.">
+                            <div class="form-text">Primary contact method for customers</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">
+                                <i class="fas fa-map-marker-alt me-1"></i>Pharmacy Address *
+                            </label>
+                            <textarea class="form-control" id="address" name="address" rows="3" required 
+                                      placeholder="Enter complete pharmacy address"></textarea>
+                            <div class="form-text">This helps customers find your pharmacy</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="operating_hours" class="form-label">
+                                <i class="fas fa-clock me-1"></i>Operating Hours *
+                            </label>
+                            <input type="text" class="form-control" id="operating_hours" name="operating_hours" required 
+                                   placeholder="e.g., Mon-Fri: 9AM-8PM, Sat: 9AM-6PM, Sun: Closed">
+                            <div class="form-text">When is your pharmacy open for business?</div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Your pharmacy registration will be reviewed for compliance with local regulations. 
+                            Please ensure all information is accurate and up-to-date.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-store me-2"></i>Create Pharmacy Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted">
+                            Want to register as a buyer instead? 
+                            <a href="/register/buyer" class="text-decoration-none">Click here</a>
+                        </p>
+                        <p class="text-muted">
+                            Already have an account? 
+                            <a href="/" class="text-decoration-none">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const password = document.getElementById('password');
+    const licenseNumber = document.getElementById('license_number');
+    
+    form.addEventListener('submit', function(e) {
+        if (password.value.length < 6) {
+            e.preventDefault();
+            alert('Password must be at least 6 characters long');
+            password.focus();
+            return;
+        }
+        
+        if (licenseNumber.value.trim().length < 3) {
+            e.preventDefault();
+            alert('Please enter a valid license number');
+            licenseNumber.focus();
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}
