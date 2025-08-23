@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 
-# ---------- Home Page ----------
+templates = Jinja2Templates(directory="templates")
+
 @router.get("/", response_class=HTMLResponse)
-def role_selector(request: Request):
-    return request.app.templates.TemplateResponse("login.html", {"request": request})
-
-
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})

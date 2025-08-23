@@ -2,12 +2,14 @@ from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from bson import ObjectId
 from datetime import datetime
+from fastapi.templating import Jinja2Templates
 
 from database import get_database
 from utils import format_currency, is_medicine_expired
 from auth import require_role
 
 router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
 @router.get("/buyer/profile", response_class=HTMLResponse)
 def buyer_profile_form(request: Request, current_user: dict = Depends(require_role("buyer"))):

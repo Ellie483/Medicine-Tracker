@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from routes import auth_routes
 
 from routes import (
     auth_routes,
