@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi import HTTPException, status
+from bson import ObjectId
 from datetime import datetime
+from fastapi.templating import Jinja2Templates
 
 from database import get_database
 from auth import require_role
 
 router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
 @router.get("/seller/profile", response_class=HTMLResponse)
 def seller_profile_form(request: Request, current_user: dict = Depends(require_role("seller"))):
@@ -13,22 +17,24 @@ def seller_profile_form(request: Request, current_user: dict = Depends(require_r
         return RedirectResponse(url="/seller/home", status_code=302)
     return request.app.state.templates.TemplateResponse("seller_profile.html", {"request": request, "current_user": current_user})
 
+############################################################################
+
 @router.get("/seller/home", response_class=HTMLResponse)
 def seller_home(request: Request, current_user: dict = Depends(require_role("seller"))):
-    if not current_user.get("is_profile_complete"):
-        return RedirectResponse(url="/seller/profile", status_code=302)
+    print(f"📦 Arrived at seller home for: {current_user['username']}")
 
-    db = get_database()
-    medicines = db.medicines.find({"seller_id": current_user["_id"]})
-    total_medicines = medicines.count()
-    low_stock_count = sum(1 for med in medicines if med.get("stock", 0) < 5)
+    # 👉 Just render the template, no DB interaction
+    return templates.TemplateResponse(
+        "seller/home.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "total_medicines": 0,
+            "low_stock_count": 0,
+        },
+    )
 
-    return request.app.state.templates.TemplateResponse("seller/home.html", {
-        "request": request,
-        "current_user": current_user,
-        "total_medicines": total_medicines,
-        "low_stock_count": low_stock_count,
-    })
+####################################################################################
 
 @router.get("/seller/inventory", response_class=HTMLResponse)
 def seller_inventory(request: Request, current_user: dict = Depends(require_role("seller"))):
@@ -95,3 +101,4 @@ def update_seller_profile(
     db.pharmacy_profiles.update_one({"user_id": current_user["_id"]}, {"$set": update_data})
 
     return RedirectResponse(url="/seller/home", status_code=302)
+

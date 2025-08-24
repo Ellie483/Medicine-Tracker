@@ -49,41 +49,28 @@ async def authenticate_user(username: str, password: str):
         return False
     return user
 
+# ✅ Get the current user from session
 async def get_current_user(request: Request):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
-    # Get token from cookie
-    token = request.cookies.get("access_token")
-    if not token:
-        raise credentials_exception
-    
-    # Remove 'Bearer ' prefix if present
-    if token.startswith("Bearer "):
-        token = token[7:]
-    
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    
-    user = await get_user_by_username(username)
-    if user is None:
-        raise credentials_exception
+    user = request.session.get("user")
+    if not user:
+        print("❌ No active session found → User not authenticated")
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    print(f"✅ User session found → {user['username']} ({user['role']})")
     return user
 
+
+# ✅ Role checker dependency
 def require_role(required_role: str):
     def role_checker(current_user: dict = Depends(get_current_user)):
+        print(f"🔍 Checking role → required: {required_role}, current: {current_user['role']}")
+        
         if current_user["role"] != required_role:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough permissions"
-            )
+            print(f"❌ Permission denied for {current_user['username']} → Needs {required_role}")
+            raise HTTPException(status_code=403, detail="Not enough permissions")
+        
+        print(f"✅ Permission granted → {current_user['username']} has role {required_role}")
         return current_user
+
     return role_checker
+

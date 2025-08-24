@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.sessions import SessionMiddleware
 from routes import auth_routes
 
 from routes import (
@@ -22,6 +23,9 @@ app = FastAPI(title="Medicine Availability Tracker", version="1.0.0")
 # Static and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# ---------- Session middleware --------------
+app.add_middleware(SessionMiddleware, secret_key="supersecretkey")
 
 # ---------- Startup Events ----------
 @app.on_event("startup")
