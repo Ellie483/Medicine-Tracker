@@ -8,6 +8,7 @@ from database import get_database
 import os
 from dotenv import load_dotenv
 from passlib.hash import bcrypt
+from starlette.status import HTTP_403_FORBIDDEN
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY", "medicine123")
@@ -60,17 +61,20 @@ async def get_current_user(request: Request):
     return user
 
 
-# ✅ Role checker dependency
-def require_role(required_role: str):
-    def role_checker(current_user: dict = Depends(get_current_user)):
-        print(f"🔍 Checking role → required: {required_role}, current: {current_user['role']}")
+def require_role(role: str):
+    def wrapper(request: Request):
+        user = request.session.get("user")
         
-        if current_user["role"] != required_role:
-            print(f"❌ Permission denied for {current_user['username']} → Needs {required_role}")
-            raise HTTPException(status_code=403, detail="Not enough permissions")
+        if not user:
+            print("❌ No session found.")
+            raise HTTPException(status_code=401, detail="Not authenticated")
         
-        print(f"✅ Permission granted → {current_user['username']} has role {required_role}")
-        return current_user
-
-    return role_checker
+        print(f"✅ Session found: {user}")  # Log the user session
+        
+        if user["role"] != role:
+            print(f"❌ User has role {user['role']} but {role} is required")
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        return user
+    return wrapper
 
