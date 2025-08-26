@@ -145,17 +145,9 @@ async def login(
         "username": user["username"],
         "role": user["role"],
         "id": str(user["_id"]),
-        "is_profile_complete": True,
+        "is_profile_complete": user.get("is_profile_complete", False),
     }
     print(f"✅ User session created for {username} with role {user['role']}")
-
-    # Fetch profile to check if it is complete (from buyer_profiles collection)
-    buyer_profile = db.buyer_profiles.find_one({"user_id": str(user["_id"])})
-    if not buyer_profile:
-        print(f"❌ No profile found for {username}, redirecting to profile creation.")
-        return RedirectResponse(url="/buyer/home", status_code=302)
-
-    print(f"✅ Profile found for user {username}, redirecting to home.")
 
     # ✅ Redirect based on role
     if user["role"] == "buyer":

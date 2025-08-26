@@ -36,21 +36,45 @@ def buyer_home(request: Request, current_user: dict = Depends(require_role("buye
     })
 
 @router.get("/buyer/medicines", response_class=HTMLResponse)
-def buyer_medicines(request: Request, current_user: dict = Depends(require_role("buyer"))):
-    # Fetch the buyer profile to check if it's complete
+async def buyer_medicines(request: Request, current_user: dict = Depends(require_role("buyer"))):
     db = get_database()
-    medicines = list(db.medicines.find({"stock": {"$gt": 0}}))  # Get all medicines with stock
+    
+    # Fetch medicines with stock > 0 and not expired
+    medicines_cursor = db.Medicine.find({
+        "stock": {"$gt": 0},
+        "expiration_date": {"$gte": datetime.utcnow()}  # Ensure the medicine is not expired
+    })
+
+    # Convert the cursor to a list
+    medicines = list(medicines_cursor)
+
+    # Print medicines data to the terminal to check the output
+    print(f"📦 Medicines data: {medicines}")
+
+    # Prepare medicines data with pharmacy info
+    medicines_data = []
     for med in medicines:
-        pharmacy = db.pharmacy_profiles.find_one({"_id": ObjectId(med["pharmacy_id"])})
-        med["pharmacy_name"] = pharmacy["pharmacy_name"] if pharmacy else "Unknown Pharmacy"
-        med["formatted_price"] = format_currency(med["price"])
-        med["is_expired"] = is_medicine_expired(med)
+        # Fetch the pharmacy info from the pharmacy_profiles collection
+        pharmacy = db.pharmacy_profiles.find_one({"_id": ObjectId(med["seller_id"])})
+        
+        med_data = {
+            "name": med["name"],
+            "price": med["price"],
+            "stock": med["stock"],
+            "description": med["description"],
+            "formatted_price": f"${med['price']:.2f}",
+            "is_expired": med["expiration_date"] < datetime.utcnow(),  # Check if expired
+            "expiration_date": med["expiration_date"],
+            "pharmacy_name": pharmacy["pharmacy_name"] if pharmacy else "Unknown Pharmacy",  # Get pharmacy name
+        }
+        medicines_data.append(med_data)
+
+    # Return template with medicines data
     return templates.TemplateResponse("buyer/medicines.html", {
         "request": request,
         "current_user": current_user,
-        "medicines": medicines
+        "medicines": medicines_data
     })
-
 
 @router.get("/buyer/orders", response_class=HTMLResponse)
 def buyer_orders(request: Request, current_user: dict = Depends(require_role("buyer"))):
@@ -99,26 +123,26 @@ def buyer_profile_edit(request: Request, current_user: dict = Depends(require_ro
     })
 
 
-# @router.post("/buyer/profile/update")
-# def update_buyer_profile(
-#     request: Request,
-#     name: str = Form(...),
-#     age: int = Form(...),
-#     address: str = Form(...),
-#     phone: str = Form(""),
-#     email: str = Form(""),
-#     current_user: dict = Depends(require_role("buyer"))
-# ):
-#     db = get_database()
-#     update_data = {
-#         "name": name,
-#         "age": age,
-#         "address": address,
-#         "updated_at": datetime.utcnow()
-#     }
-#     if phone:
-#         update_data["phone"] = phone
-#     if email:
-#         update_data["email"] = email
-#     db.buyer_profiles.update_one({"user_id": current_user["id"]}, {"$set": update_data})
-#     return RedirectResponse(url="/buyer/home", status_code=302)
+@router.post("/buyer/profile/update")
+def update_buyer_profile(
+    request: Request,
+    name: str = Form(...),
+    age: int = Form(...),
+    address: str = Form(...),
+    phone: str = Form(""),
+    email: str = Form(""),
+    current_user: dict = Depends(require_role("buyer"))
+):
+    db = get_database()
+    update_data = {
+        "name": name,
+        "age": age,
+        "address": address,
+        "updated_at": datetime.utcnow()
+    }
+    if phone:
+        update_data["phone"] = phone
+    if email:
+        update_data["email"] = email
+    db.buyer_profiles.update_one({"user_id": current_user["id"]}, {"$set": update_data})
+    return RedirectResponse(url="/buyer/home", status_code=302)
