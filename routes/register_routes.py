@@ -144,8 +144,10 @@ async def login(
     request.session["user"] = {
         "username": user["username"],
         "role": user["role"],
-        "id": str(user["_id"])
+        "id": str(user["_id"]),
+        "is_profile_complete": bool(user["is_profile_complete"])
     }
+    
     print(f"✅ User session created for {username} with role {user['role']}")
 
     # ✅ Redirect based on role

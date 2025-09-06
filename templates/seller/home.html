@@ -9,11 +9,12 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="mb-1"><i class="fas fa-store me-2 text-primary"></i>Welcome back!</h2>
+                    <h2 class="mb-1"><i class="fas fa-store me-2 text-primary"></i>Welcome back, {{ current_user.username }}!</h2>
                     <p class="text-muted mb-0">Manage your pharmacy and track your business</p>
                 </div>
                 <div class="text-end">
-                    <small class="text-muted">{{ current_user.username }}</small>
+                    <h5 class="text-muted mb-0">{{ current_user.pharmacy_name }}</h5>
+                    <small class="text-muted">Your Pharmacy</small>
                 </div>
             </div>
         </div>
@@ -21,7 +22,7 @@
 
     <!-- Summary Cards -->
     <div class="row mb-4">
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body text-center">
                     <div class="mb-3">
@@ -35,23 +36,8 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-shopping-cart fa-3x text-success"></i>
-                    </div>
-                    <h3 class="fw-bold text-success">{{ orders_received }}</h3>
-                    <p class="text-muted mb-3">Orders Received</p>
-                    <a href="/seller/orders" class="btn btn-outline-success btn-sm">
-                        <i class="fas fa-clipboard-list me-1"></i>View Orders
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-3">
+
+        <div class="col-md-3 mb-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body text-center">
                     <div class="mb-3">
@@ -59,139 +45,455 @@
                     </div>
                     <h3 class="fw-bold text-warning">{{ low_stock_count }}</h3>
                     <p class="text-muted mb-3">Low Stock Alerts</p>
-                    <a href="/seller/inventory?filter=low_stock" class="btn btn-outline-warning btn-sm">
+                    <a href="/seller/inventory" class="btn btn-outline-warning btn-sm">
                         <i class="fas fa-eye me-1"></i>Check Stock
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-shopping-cart fa-3x text-success"></i>
+                    </div>
+                    <h3 class="fw-bold text-success">{{ orders_received }}</h3>
+                    <p class="text-muted mb-3">Total Orders</p>
+                    <a href="/seller/orders" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-clipboard-list me-1"></i>View Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-money-bill-wave fa-3x text-info"></i>
+                    </div>
+                    <h3 class="fw-bold text-info">{{ total_revenue }} Ks</h3>
+                    <p class="text-muted mb-3">Total Revenue</p>
+                    <a href="/seller/orders" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-chart-bar me-1"></i>View Analytics
                     </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Quick Actions -->
-        <div class="col-lg-8 mb-4">
-            <div class="card border-0 shadow-sm">
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <!-- Pie Chart - Top Selling Medicines -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-bolt me-2 text-warning"></i>Quick Actions
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>Top Selling Medicines
                     </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <a href="/seller/add-medicine" class="btn btn-primary w-100 p-3">
-                                <i class="fas fa-plus-circle fa-2x mb-2 d-block"></i>
-                                <strong>Add New Medicine</strong>
-                                <small class="d-block text-white-50">Add medicines to your inventory</small>
-                            </a>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label small">Start Date</label>
+                            <input type="date" id="pieStartDate" class="form-control form-control-sm">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="/seller/inventory" class="btn btn-info w-100 p-3">
-                                <i class="fas fa-boxes fa-2x mb-2 d-block"></i>
-                                <strong>Manage Inventory</strong>
-                                <small class="d-block text-white-50">Update stock and prices</small>
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="/seller/orders" class="btn btn-success w-100 p-3">
-                                <i class="fas fa-clipboard-list fa-2x mb-2 d-block"></i>
-                                <strong>Process Orders</strong>
-                                <small class="d-block text-white-50">View and confirm orders</small>
-                            </a>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <a href="/seller/profile-edit" class="btn btn-secondary w-100 p-3">
-                                <i class="fas fa-store-alt fa-2x mb-2 d-block"></i>
-                                <strong>Pharmacy Info</strong>
-                                <small class="d-block text-white-50">Update pharmacy details</small>
-                            </a>
+                        <div class="col-md-6">
+                            <label class="form-label small">End Date</label>
+                            <input type="date" id="pieEndDate" class="form-control form-control-sm">
                         </div>
                     </div>
+                    <button onclick="updatePieChart()" class="btn btn-primary btn-sm mt-2">
+                        <i class="fas fa-sync me-1"></i>Apply Filter
+                    </button>
+                </div>
+                <div class="card-body">
+                    <canvas id="pieChart" height="250"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Orders -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm">
+        <!-- Line Chart - Sales Trend -->
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-clock me-2 text-info"></i>Recent Orders
+                        <i class="fas fa-chart-line me-2 text-success"></i>Sales Trend (Revenue)
                     </h5>
+                    <div class="row mt-3 g-2">
+                        <div class="col-md-4">
+                            <select id="timeUnit" class="form-select form-select-sm" onchange="changeTimeUnit()">
+                                <option value="day">Daily</option>
+                                <option value="month">Monthly</option>
+                                <option value="year">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" id="monthSelector">
+                            <div class="input-group input-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="changeMonth(-1)">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <input type="text" id="currentMonth" class="form-control text-center" readonly>
+                                <button class="btn btn-outline-secondary" onclick="changeMonth(1)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button onclick="updateLineChart()" class="btn btn-success btn-sm w-100">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
-                    {% if recent_orders %}
-                        {% for order in recent_orders %}
-                        <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                            <div class="me-3">
-                                <i class="fas fa-receipt text-success"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">Order #{{ order._id|string|truncate(8, true, '...') }}</h6>
-                                <small class="text-muted">{{ order.created_at.strftime('%b %d, %Y') }}</small>
-                                <div class="mt-1">
-                                    <span class="badge bg-{{ 'success' if order.status == 'confirmed' else 'warning' }} badge-sm">
-                                        {{ order.status.title() }}
-                                    </span>
-                                    <span class="text-success fw-bold ms-2">₹{{ "%.2f"|format(order.total_amount) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        <a href="/seller/orders" class="btn btn-outline-success btn-sm w-100">
-                            <i class="fas fa-list me-1"></i>View All Orders
-                        </a>
-                    {% else %}
-                        <div class="text-center py-3">
-                            <i class="fas fa-clipboard-list fa-2x text-muted mb-2"></i>
-                            <p class="text-muted mb-3">No recent orders</p>
-                            <small class="text-muted">Orders will appear here when customers place them</small>
-                        </div>
-                    {% endif %}
+                    <canvas id="lineChart" height="250"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Business Insights -->
+    <!-- Recent Activity -->
     <div class="row">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line me-2 text-primary"></i>Business Overview
+                        <i class="fas fa-history me-2 text-info"></i>Recent Orders
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-3 mb-3">
-                            <div class="border-end">
-                                <div class="fw-bold text-primary fs-4">{{ total_medicines }}</div>
-                                <small class="text-muted">Total Medicines</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="border-end">
-                                <div class="fw-bold text-success fs-4">{{ orders_received }}</div>
-                                <small class="text-muted">Total Orders</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="border-end">
-                                <div class="fw-bold text-warning fs-4">{{ low_stock_count }}</div>
-                                <small class="text-muted">Low Stock Items</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-3">
-                            <div class="fw-bold text-info fs-4">4.8</div>
-                            <small class="text-muted">Average Rating</small>
-                        </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Medicine</th>
+                                    <th>Quantity</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrders">
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading recent orders...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Global variables
+let pieChartInstance = null;
+let lineChartInstance = null;
+let dashboardData = null;
+let currentMonth = new Date();
+let currentTimeUnit = 'day';
+
+// Initialize dashboard with data from backend
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔹 Initializing dashboard...');
+    
+    try {
+        // Parse the dashboard data passed from backend
+        dashboardData = JSON.parse('{{ dashboard_data | safe }}');
+        console.log('✅ Dashboard data loaded:', dashboardData);
+        
+        // Set default dates for pie chart (last 30 days)
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        
+        document.getElementById('pieStartDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+        document.getElementById('pieEndDate').value = today.toISOString().split('T')[0];
+        
+        // Set current month for line chart
+        updateMonthDisplay();
+        
+        // Update all components
+        updatePieChart();
+        updateLineChart();
+        updateRecentOrders();
+        
+    } catch (error) {
+        console.error('❌ Error parsing dashboard data:', error);
+        document.getElementById('recentOrders').innerHTML = 
+            '<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>';
+    }
+});
+
+function updatePieChart() {
+    if (!dashboardData) return;
+    
+    const startDate = new Date(document.getElementById('pieStartDate').value);
+    const endDate = new Date(document.getElementById('pieEndDate').value);
+    endDate.setHours(23, 59, 59, 999); // Include entire end date
+    
+    // Filter orders by date range
+    const filteredOrders = dashboardData.orders.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate >= startDate && orderDate <= endDate;
+    });
+    
+    // Calculate medicine sales from order items
+    const medicineSales = {};
+    filteredOrders.forEach(order => {
+        order.items.forEach(item => {
+            const medicineName = item.medicine_name;
+            if (!medicineSales[medicineName]) {
+                medicineSales[medicineName] = 0;
+            }
+            medicineSales[medicineName] += item.quantity;
+        });
+    });
+    
+    // Sort by quantity and get top 5
+    const sortedSales = Object.entries(medicineSales)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5);
+    
+    const totalSold = Object.values(medicineSales).reduce((sum, val) => sum + val, 0);
+    
+    // Prepare data for chart
+    const labels = [];
+    const data = [];
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+    
+    sortedSales.forEach(([medicine, sales], index) => {
+        const percentage = totalSold > 0 ? ((sales / totalSold) * 100).toFixed(1) : 0;
+        labels.push(`${medicine} (${percentage}%)`);
+        data.push(sales);
+    });
+    
+    // Add "Others" category if there are more medicines
+    const otherSales = totalSold - sortedSales.reduce((sum, [,sales]) => sum + sales, 0);
+    if (otherSales > 0) {
+        const percentage = totalSold > 0 ? ((otherSales / totalSold) * 100).toFixed(1) : 0;
+        labels.push(`Others (${percentage}%)`);
+        data.push(otherSales);
+    }
+    
+    // Create or update pie chart
+    const ctx = document.getElementById('pieChart').getContext('2d');
+    
+    if (pieChartInstance) {
+        pieChartInstance.destroy();
+    }
+    
+    pieChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const percentage = totalSold > 0 ? ((value / totalSold) * 100).toFixed(1) : 0;
+                            return `${label.split(' (')[0]}: ${value} units (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateLineChart() {
+    if (!dashboardData) return;
+    
+    const orders = dashboardData.orders;
+    let labels = [];
+    let data = [];
+    
+    if (currentTimeUnit === 'day') {
+        // Daily revenue for current month
+        const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+        const dailyRevenue = new Array(daysInMonth).fill(0);
+        
+        orders.forEach(order => {
+            const orderDate = new Date(order.created_at);
+            if (orderDate.getMonth() === currentMonth.getMonth() && 
+                orderDate.getFullYear() === currentMonth.getFullYear()) {
+                const day = orderDate.getDate() - 1;
+                dailyRevenue[day] += order.total_amount;
+            }
+        });
+        
+        labels = Array.from({length: daysInMonth}, (_, i) => `Day ${i + 1}`);
+        data = dailyRevenue;
+        
+    } else if (currentTimeUnit === 'month') {
+        // Monthly revenue for current year
+        const monthlyRevenue = new Array(12).fill(0);
+        const currentYear = currentMonth.getFullYear();
+        
+        orders.forEach(order => {
+            const orderDate = new Date(order.created_at);
+            if (orderDate.getFullYear() === currentYear) {
+                const month = orderDate.getMonth();
+                monthlyRevenue[month] += order.total_amount;
+            }
+        });
+        
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        data = monthlyRevenue;
+        
+    } else if (currentTimeUnit === 'year') {
+        // Yearly revenue
+        const yearlyRevenue = {};
+        orders.forEach(order => {
+            const year = new Date(order.created_at).getFullYear();
+            yearlyRevenue[year] = (yearlyRevenue[year] || 0) + order.total_amount;
+        });
+        
+        labels = Object.keys(yearlyRevenue).sort();
+        data = labels.map(year => yearlyRevenue[year]);
+    }
+    
+    // Create or update line chart
+    const ctx = document.getElementById('lineChart').getContext('2d');
+    
+    if (lineChartInstance) {
+        lineChartInstance.destroy();
+    }
+    
+    lineChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Revenue (Ks)',
+                data: data,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Revenue (Ks)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: currentTimeUnit === 'day' ? 'Days' : 
+                              currentTimeUnit === 'month' ? 'Months' : 'Years'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Revenue: ${context.raw.toLocaleString()} Ks`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function changeTimeUnit() {
+    currentTimeUnit = document.getElementById('timeUnit').value;
+    document.getElementById('monthSelector').style.display = 
+        currentTimeUnit === 'day' ? 'block' : 'none';
+    updateLineChart();
+}
+
+function changeMonth(direction) {
+    currentMonth.setMonth(currentMonth.getMonth() + direction);
+    updateMonthDisplay();
+    updateLineChart();
+}
+
+function updateMonthDisplay() {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = monthNames[currentMonth.getMonth()];
+    const year = currentMonth.getFullYear();
+    document.getElementById('currentMonth').value = `${monthName} ${year}`;
+}
+
+function updateRecentOrders() {
+    if (!dashboardData) return;
+    
+    const recentOrders = dashboardData.orders
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 8);
+    
+    const ordersHtml = recentOrders.map(order => {
+        const mainItem = order.items[0]; // Show first item
+        const additionalItems = order.items.length > 1 ? ` +${order.items.length - 1} more` : '';
+        
+        return `
+            <tr>
+                <td><small>${order.order_id.substring(0, 8)}...</small></td>
+                <td>${mainItem.medicine_name}${additionalItems}</td>
+                <td>${mainItem.quantity}</td>
+                <td>${order.total_amount.toLocaleString()} Ks</td>
+                <td><span class="badge bg-${getStatusColor(order.status)}">${order.status}</span></td>
+                <td><small>${formatDate(order.created_at)}</small></td>
+            </tr>
+        `;
+    }).join('');
+    
+    document.getElementById('recentOrders').innerHTML = ordersHtml || 
+        '<tr><td colspan="6" class="text-center">No orders yet</td></tr>';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'completed': 'success',
+        'pending': 'warning',
+        'cancelled': 'danger',
+        'processing': 'info',
+        'delivered': 'primary'
+    };
+    return colors[status.toLowerCase()] || 'secondary';
+}
+</script>
 
 <style>
 .card {
@@ -208,21 +510,38 @@
     border-radius: 8px;
 }
 
-.border-end {
-    border-right: 1px solid #dee2e6 !important;
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
 }
 
-@media (max-width: 768px) {
-    .border-end {
-        border-right: none !important;
-        border-bottom: 1px solid #dee2e6 !important;
-        padding-bottom: 1rem;
-        margin-bottom: 1rem;
-    }
+#monthSelector {
+    display: block;
 }
 
-.badge-sm {
-    font-size: 0.7em;
+.input-group {
+    width: 180px;
+}
+
+#currentMonth {
+    background-color: white;
+    font-weight: 500;
+    text-align: center;
+}
+
+.table th {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.table td {
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.75rem;
 }
 </style>
 {% endblock %}

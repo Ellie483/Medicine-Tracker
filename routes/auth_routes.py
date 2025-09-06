@@ -39,9 +39,3 @@ def route_redirector(request: Request):
 
     except (JWTError, ValueError):
         return RedirectResponse(url="/login", status_code=302)
-
-@router.get("/logout")
-def logout():
-    response = RedirectResponse(url="/", status_code=302)
-    response.delete_cookie(key="access_token")
-    return response

@@ -4,6 +4,23 @@
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Flash Messages -->
+    {% if request.session.get('flash_success') %}
+    <div class="alert alert-success alert-dismissible fade show mt-3">
+        <i class="fas fa-check-circle me-2"></i>
+        {{ request.session.flash_success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    {% if request.session.get('flash_error') %}
+    <div class="alert alert-danger alert-dismissible fade show mt-3">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ request.session.flash_error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
@@ -30,7 +47,7 @@
                         <div class="col-md-4">
                             <input type="text" id="searchInput" class="form-control" placeholder="Search medicines...">
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <select id="stockFilter" class="form-select">
                                 <option value="">All Stock</option>
                                 <option value="in_stock">In Stock</option>
@@ -38,20 +55,12 @@
                                 <option value="out_of_stock">Out of Stock</option>
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <select id="expiryFilter" class="form-select">
                                 <option value="">All Items</option>
                                 <option value="expired">Expired</option>
                                 <option value="expiring_soon">Expiring Soon</option>
                                 <option value="fresh">Fresh</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select id="sortBy" class="form-select">
-                                <option value="name">Sort by Name</option>
-                                <option value="stock">Sort by Stock</option>
-                                <option value="price">Sort by Price</option>
-                                <option value="expiry">Sort by Expiry</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -66,35 +75,43 @@
     </div>
 
     <!-- Inventory Stats -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
+    <div class="row mb-4 justify-content-center">
+        <div class="col-md-2 mb-3">
             <div class="card border-0 bg-primary text-white">
                 <div class="card-body text-center">
-                    <h4>{{ medicines|length }}</h4>
+                    <h4>{{ total_medicines }}</h4>
                     <p class="mb-0">Total Medicines</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-2 mb-3">
             <div class="card border-0 bg-success text-white">
                 <div class="card-body text-center">
-                    <h4>{{ medicines|selectattr('stock', 'gt', 10)|list|length }}</h4>
+                    <h4>{{ in_stock_count }}</h4>
                     <p class="mb-0">In Stock</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-2 mb-3">
             <div class="card border-0 bg-warning text-white">
                 <div class="card-body text-center">
-                    <h4>{{ medicines|selectattr('is_low_stock')|list|length }}</h4>
+                    <h4>{{ low_stock_count }}</h4>
                     <p class="mb-0">Low Stock</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-3">
+        <div class="col-md-2 mb-3">
+            <div class="card border-0 bg-secondary text-white">
+                <div class="card-body text-center">
+                    <h4>{{ out_of_stock_count }}</h4>
+                    <p class="mb-0">Out of Stock</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
             <div class="card border-0 bg-danger text-white">
                 <div class="card-body text-center">
-                    <h4>{{ medicines|selectattr('is_expired')|list|length }}</h4>
+                    <h4>{{ expired_count }}</h4>
                     <p class="mb-0">Expired</p>
                 </div>
             </div>
@@ -107,60 +124,64 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0" id="medicinesTable">
-                    <thead class="table-light">
+                    <thead class="table-dark">
                         <tr>
+                            <th class="text-center">Image</th>
                             <th>Medicine Name</th>
-                            <th>Stock</th>
-                            <th>Price</th>
-                            <th>Expiry Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th class="text-center">Stock</th>
+                            <th class="text-center">Price (Ks)</th>
+                            <th class="text-center">Expiry Date</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="medicineTableBody">
                         {% for medicine in medicines %}
                         <tr class="medicine-row" 
+                            data-id="{{ medicine._id }}"
                             data-name="{{ medicine.name.lower() }}"
                             data-stock="{{ medicine.stock }}"
                             data-price="{{ medicine.price }}"
                             data-expiry="{{ medicine.expiration_date }}"
                             data-expired="{{ medicine.is_expired|lower }}"
-                            data-low-stock="{{ medicine.is_low_stock|lower }}">
+                            data-low-stock="{{ medicine.is_low_stock|lower }}"
+                            data-out-of-stock="{{ medicine.is_out_of_stock|lower }}"
+                            data-description="{{ medicine.description }}"
+                            data-image="{{ medicine.image_url }}">
+                            <td class="text-center">
+                                <img src="{{ medicine.image_url }}" 
+                                    alt="{{ medicine.name }}"
+                                    class="img-thumbnail medicine-image"
+                                    style="width: 60px; height: 60px; object-fit: cover;"
+                                    onerror="this.src='/static/images/placeholder-medicine.png'">
+                            </td>
                             <td>
                                 <div>
-                                    <strong>{{ medicine.name }}</strong>
+                                    <strong class="d-block">{{ medicine.name }}</strong>
                                     {% if medicine.description %}
-                                    <br><small class="text-muted">{{ medicine.description[:50] }}...</small>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <span class="me-2">{{ medicine.stock }}</span>
-                                    {% if medicine.is_low_stock %}
-                                    <span class="badge bg-warning badge-sm">Low</span>
-                                    {% elif medicine.stock == 0 %}
-                                    <span class="badge bg-danger badge-sm">Out</span>
+                                    <small class="text-muted">{{ medicine.description[:50] }}{% if medicine.description|length > 50 %}...{% endif %}</small>
                                     {% else %}
-                                    <span class="badge bg-success badge-sm">OK</span>
+                                    <small class="text-muted">No description</small>
                                     {% endif %}
                                 </div>
                             </td>
-                            <td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="me-2">{{ medicine.stock }}</span>
+                                </div>
+                            </td>
+                            <td class="text-center">
                                 <strong class="text-success">{{ medicine.formatted_price }}</strong>
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <div>
                                     {{ medicine.expiration_date }}
-                                    {% if medicine.is_expired %}
-                                    <br><span class="badge bg-danger badge-sm">Expired</span>
-                                    {% endif %}
                                 </div>
                             </td>
-                            <td>
+                            <td class="text-center">
                                 {% if medicine.is_expired %}
                                 <span class="badge bg-danger">Expired</span>
-                                {% elif medicine.stock == 0 %}
+                                {% elif medicine.is_out_of_stock %}
                                 <span class="badge bg-secondary">Out of Stock</span>
                                 {% elif medicine.is_low_stock %}
                                 <span class="badge bg-warning">Low Stock</span>
@@ -168,15 +189,12 @@
                                 <span class="badge bg-success">Available</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary" onclick="editMedicine('{{ medicine._id }}')">
+                                    <button class="btn btn-outline-primary me-2" onclick="openEditModal('{{ medicine._id }}')">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-outline-info" onclick="updateStock('{{ medicine._id }}', '{{ medicine.name }}', {{ medicine.stock }})">
-                                        <i class="fas fa-boxes"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger" onclick="deleteMedicine('{{ medicine._id }}', '{{ medicine.name }}')">
+                                    <button class="btn btn-outline-danger" onclick="showDeleteModal('{{ medicine._id }}', '{{ medicine.name }}')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -185,6 +203,26 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- Pagination Footer -->
+            <div class="card-footer bg-light mt-5">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div id="paginationInfo" class="text-muted">
+                        Showing <span id="currentRange">0-0</span> of <span id="totalItems">0</span> items
+                    </div>
+                    <nav aria-label="Medicine pagination" class="mt-2 mt-sm-0">
+                        <ul class="pagination justify-content-center mb-0" id="paginationControls">
+                            <li class="page-item" id="prevPage">
+                                <a class="page-link" href="#" onclick="changePage(currentPage - 1)">Previous</a>
+                            </li>
+                            <span id="pageNumbers" class="d-flex"></span>
+                            <li class="page-item" id="nextPage">
+                                <a class="page-link" href="#" onclick="changePage(currentPage + 1)">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
         </div>
     </div>
@@ -211,211 +249,302 @@
             <p class="text-muted">Try adjusting your search criteria</p>
         </div>
     </div>
-</div>
 
-<!-- Update Stock Modal -->
-<div class="modal fade" id="stockModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-boxes me-2"></i>Update Stock
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="stockForm">
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
-                    <input type="hidden" id="stockMedicineId">
-                    <div class="mb-3">
-                        <label class="form-label">Medicine Name</label>
-                        <div id="stockMedicineName" class="form-control-plaintext fw-bold"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="currentStock" class="form-label">Current Stock</label>
-                        <input type="number" class="form-control" id="currentStock" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="newStock" class="form-label">New Stock Quantity</label>
-                        <input type="number" class="form-control" id="newStock" min="0" required>
+                    <div class="text-center mb-4">
+                        <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                        <h4>Are you sure?</h4>
+                        <p class="text-muted">You are about to delete: <strong id="deleteMedicineName"></strong></p>
+                        <p class="text-warning">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            This action cannot be undone!
+                        </p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>Update Stock
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
                     </button>
+                    <a href="#" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-1"></i>Yes, Delete Medicine
+                    </a>
                 </div>
-            </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Medicine Modal -->
+    <div class="modal fade" id="editMedicineModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>Edit Medicine
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editMedicineForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <input type="hidden" id="editMedicineId" name="medicine_id">
+                        
+                        <div class="text-center mb-4">
+                            <img id="currentMedicineImage" src="" 
+                                 class="img-thumbnail mb-2" 
+                                 style="width: 120px; height: 120px; object-fit: cover;"
+                                 onerror="this.src='/static/images/placeholder-medicine.png'">
+                            <p class="text-muted small">Current Image</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editName" class="form-label">Medicine Name *</label>
+                                    <input type="text" class="form-control" id="editName" name="name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editImage" class="form-label">Update Image</label>
+                                    <input type="file" class="form-control" id="editImage" name="medicine_image" 
+                                           accept="image/*">
+                                    <div class="form-text">Leave empty to keep current image</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="editStock" class="form-label">Stock Quantity *</label>
+                                    <input type="number" class="form-control" id="editStock" name="stock" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="editPrice" class="form-label">Price (Ks) *</label>
+                                    <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="editExpirationDate" class="form-label">Expiration Date *</label>
+                                    <input type="date" class="form-control" id="editExpirationDate" name="expiration_date" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-// Search and filter functionality
-function filterMedicines() {
+// Global variables
+let currentPage = 1;
+const itemsPerPage = 10;
+let filteredMedicines = [];
+let allMedicines = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔹 Initializing inventory system...');
+    
+    // Store all medicines for filtering
+    allMedicines = Array.from(document.querySelectorAll('.medicine-row'));
+    filteredMedicines = [...allMedicines];
+    
+    // Initialize filters and pagination
+    initializeFilters();
+    updatePagination();
+    applyFilters();
+    
+    // Add event listeners
+    document.getElementById('searchInput').addEventListener('input', function() {
+        currentPage = 1;
+        applyFilters();
+    });
+    
+    document.getElementById('stockFilter').addEventListener('change', function() {
+        currentPage = 1;
+        applyFilters();
+    });
+    
+    document.getElementById('expiryFilter').addEventListener('change', function() {
+        currentPage = 1;
+        applyFilters();
+    });
+});
+
+function initializeFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('stockFilter').value = '';
+    document.getElementById('expiryFilter').value = '';
+}
+
+function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const stockFilter = document.getElementById('stockFilter').value;
     const expiryFilter = document.getElementById('expiryFilter').value;
     
-    const rows = document.querySelectorAll('.medicine-row');
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-        const name = row.dataset.name;
-        const stock = parseInt(row.dataset.stock);
-        const expired = row.dataset.expired === 'true';
-        const lowStock = row.dataset.lowStock === 'true';
+    filteredMedicines = allMedicines.filter(medicine => {
+        const name = medicine.getAttribute('data-name');
+        const stock = parseInt(medicine.getAttribute('data-stock'));
+        const expired = medicine.getAttribute('data-expired') === 'true';
+        const expiryDate = new Date(medicine.getAttribute('data-expiry'));
         
-        // Search filter
-        const matchesSearch = !searchTerm || name.includes(searchTerm);
+        const matchesSearch = searchTerm === '' || name.includes(searchTerm);
         
-        // Stock filter
         let matchesStock = true;
         if (stockFilter === 'in_stock') matchesStock = stock > 10;
-        else if (stockFilter === 'low_stock') matchesStock = lowStock && stock > 0;
+        else if (stockFilter === 'low_stock') matchesStock = stock > 0 && stock <= 10;
         else if (stockFilter === 'out_of_stock') matchesStock = stock === 0;
         
-        // Expiry filter
         let matchesExpiry = true;
-        if (expiryFilter === 'expired') matchesExpiry = expired;
-        else if (expiryFilter === 'fresh') matchesExpiry = !expired;
+        const today = new Date();
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(today.getDate() + 30);
         
-        if (matchesSearch && matchesStock && matchesExpiry) {
-            row.style.display = '';
-            visibleCount++;
-        } else {
-            row.style.display = 'none';
-        }
+        if (expiryFilter === 'expired') matchesExpiry = expired;
+        else if (expiryFilter === 'expiring_soon') matchesExpiry = !expired && expiryDate <= thirtyDaysFromNow && expiryDate > today;
+        else if (expiryFilter === 'fresh') matchesExpiry = !expired && expiryDate > thirtyDaysFromNow;
+        
+        return matchesSearch && matchesStock && matchesExpiry;
     });
     
-    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
-    document.querySelector('.table-responsive').style.display = visibleCount === 0 ? 'none' : 'block';
+    updatePagination();
+    displayCurrentPage();
 }
 
-function sortMedicines() {
-    const sortBy = document.getElementById('sortBy').value;
-    const tbody = document.querySelector('#medicinesTable tbody');
-    const rows = Array.from(tbody.querySelectorAll('.medicine-row'));
+function updatePagination() {
+    const totalPages = Math.ceil(filteredMedicines.length / itemsPerPage);
+    const pageNumbersContainer = document.getElementById('pageNumbers');
+    const prevPage = document.getElementById('prevPage');
+    const nextPage = document.getElementById('nextPage');
     
-    rows.sort((a, b) => {
-        let aValue, bValue;
-        
-        switch(sortBy) {
-            case 'name':
-                aValue = a.dataset.name;
-                bValue = b.dataset.name;
-                break;
-            case 'stock':
-                aValue = parseInt(a.dataset.stock);
-                bValue = parseInt(b.dataset.stock);
-                return bValue - aValue; // Descending
-            case 'price':
-                aValue = parseFloat(a.dataset.price);
-                bValue = parseFloat(b.dataset.price);
-                return aValue - bValue; // Ascending
-            case 'expiry':
-                aValue = new Date(a.dataset.expiry);
-                bValue = new Date(b.dataset.expiry);
-                return aValue - bValue; // Ascending
-            default:
-                return 0;
+    pageNumbersContainer.innerHTML = '';
+    prevPage.classList.toggle('disabled', currentPage === 1);
+    nextPage.classList.toggle('disabled', currentPage === totalPages || totalPages === 0);
+    
+    if (totalPages > 0) {
+        for (let i = 1; i <= totalPages; i++) {
+            const pageItem = document.createElement('li');
+            pageItem.className = 'page-item' + (i === currentPage ? ' active' : '');
+            
+            const pageLink = document.createElement('a');
+            pageLink.className = 'page-link';
+            pageLink.href = '#';
+            pageLink.textContent = i;
+            pageLink.onclick = (e) => {
+                e.preventDefault();
+                changePage(i);
+            };
+            
+            pageItem.appendChild(pageLink);
+            pageNumbersContainer.appendChild(pageItem);
         }
-        
-        return aValue.localeCompare ? aValue.localeCompare(bValue) : aValue - bValue;
-    });
+    }
     
-    rows.forEach(row => tbody.appendChild(row));
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, filteredMedicines.length);
+    document.getElementById('currentRange').textContent = `${startItem}-${endItem}`;
+    document.getElementById('totalItems').textContent = filteredMedicines.length;
+    document.getElementById('noResults').style.display = filteredMedicines.length === 0 ? 'block' : 'none';
+}
+
+function displayCurrentPage() {
+    allMedicines.forEach(medicine => medicine.style.display = 'none');
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    filteredMedicines.slice(startIndex, endIndex).forEach(medicine => {
+        medicine.style.display = '';
+    });
+}
+
+function changePage(page) {
+    const totalPages = Math.ceil(filteredMedicines.length / itemsPerPage);
+    if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        updatePagination();
+        displayCurrentPage();
+    }
 }
 
 function clearFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('stockFilter').value = '';
-    document.getElementById('expiryFilter').value = '';
-    document.getElementById('sortBy').value = 'name';
-    filterMedicines();
+    initializeFilters();
+    currentPage = 1;
+    applyFilters();
 }
 
-// Event listeners
-document.getElementById('searchInput').addEventListener('input', filterMedicines);
-document.getElementById('stockFilter').addEventListener('change', filterMedicines);
-document.getElementById('expiryFilter').addEventListener('change', filterMedicines);
-document.getElementById('sortBy').addEventListener('change', sortMedicines);
-
-// Medicine actions
-function editMedicine(medicineId) {
-    window.location.href = `/seller/edit-medicine/${medicineId}`;
+// Delete Medicine Functions
+function showDeleteModal(medicineId, medicineName) {
+    document.getElementById('deleteMedicineName').textContent = medicineName;
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+    deleteBtn.href = `/seller/medicine/delete/${medicineId}`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
-function updateStock(medicineId, medicineName, currentStock) {
-    document.getElementById('stockMedicineId').value = medicineId;
-    document.getElementById('stockMedicineName').textContent = medicineName;
-    document.getElementById('currentStock').value = currentStock;
-    document.getElementById('newStock').value = currentStock;
-    new bootstrap.Modal(document.getElementById('stockModal')).show();
-}
-
-function deleteMedicine(medicineId, medicineName) {
-    if (confirm(`Are you sure you want to delete "${medicineName}"? This action cannot be undone.`)) {
-        // Make delete request
-        fetch(`/seller/delete-medicine/${medicineId}`, {
-            method: 'DELETE'
-        }).then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Failed to delete medicine. Please try again.');
-            }
-        }).catch(error => {
-            alert('An error occurred. Please try again.');
-        });
-    }
-}
-
-// Handle stock update form
-document.getElementById('stockForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
+// Edit Medicine Functions - RENAMED to avoid conflicts
+function openEditModal(medicineId) {
+    console.log('Opening edit modal for:', medicineId);
     
-    const medicineId = document.getElementById('stockMedicineId').value;
-    const newStock = document.getElementById('newStock').value;
-    
-    try {
-        const response = await fetch(`/seller/update-stock/${medicineId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `stock=${newStock}`
-        });
-        
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('stockModal')).hide();
-            location.reload();
-        } else {
-            alert('Failed to update stock. Please try again.');
-        }
-    } catch (error) {
-        alert('An error occurred. Please try again.');
+    const medicineRow = document.querySelector(`.medicine-row[data-id="${medicineId}"]`);
+    if (!medicineRow) {
+        console.error('Medicine row not found for ID:', medicineId);
+        return;
     }
-});
+    
+    // Populate form fields
+    document.getElementById('editMedicineId').value = medicineId;
+    document.getElementById('editName').value = medicineRow.querySelector('strong').textContent;
+    document.getElementById('editDescription').value = medicineRow.getAttribute('data-description') || '';
+    document.getElementById('editStock').value = medicineRow.getAttribute('data-stock');
+    document.getElementById('editPrice').value = medicineRow.getAttribute('data-price');
+    document.getElementById('editExpirationDate').value = medicineRow.getAttribute('data-expiry');
+    
+    // Set current image
+    const currentImage = document.getElementById('currentMedicineImage');
+    currentImage.src = medicineRow.getAttribute('data-image');
+    
+    // Set form action
+    const editForm = document.getElementById('editMedicineForm');
+    editForm.action = `/seller/medicine/update/${medicineId}`;
+    
+    // Show the modal
+    const editModal = new bootstrap.Modal(document.getElementById('editMedicineModal'));
+    editModal.show();
+}
 </script>
 
 <style>
-.badge-sm {
-    font-size: 0.7em;
-}
-
-.table th {
-    border-top: none;
-    font-weight: 600;
-    color: #495057;
-}
-
-.btn-group-sm > .btn {
-    padding: 0.25rem 0.5rem;
-}
-
-.card {
-    border-radius: 10px;
-}
+.badge-sm { font-size: 0.7em; }
+.table th { border-top: none; font-weight: 600; color: #495057; }
+.btn-group-sm > .btn { padding: 0.25rem 0.5rem; }
+.card { border-radius: 10px; }
+.medicine-image { transition: transform 0.2s ease; }
+.medicine-image:hover { transform: scale(1.1); }
+.table th { font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
 </style>
 {% endblock %}
