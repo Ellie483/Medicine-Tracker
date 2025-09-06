@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Order Detail (Pharmacy){% endblock %}
+{% block content %}
+<div class="container-xxl py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0"><i class="fas fa-file-invoice me-2"></i>Order #{{ order._id }}</h2>
+    <div class="d-flex gap-2">
+      <a href="/pharmacy/orders/review" class="btn btn-outline-secondary btn-sm">Review Queue</a>
+      <a href="/pharmacy/orders" class="btn btn-outline-secondary btn-sm">All Orders</a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <div class="text-muted small">Created: {{ order.created_at_str }}</div>
+              <div>Status: <strong>{{ order.order_status }}</strong> · Payment: <strong>{{ order.payment_status }}</strong></div>
+            </div>
+            <div class="fw-bold text-success">{{ order.formatted_total }}</div>
+          </div>
+          <hr>
+          <h4 class="h6">Items</h4>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead><tr><th>Medicine</th><th class="text-center">Qty</th><th class="text-end">Price</th><th class="text-end">Total</th></tr></thead>
+              <tbody>
+                {% for it in order.items %}
+                  <tr>
+                    <td>{{ it.medicine_name }}</td>
+                    <td class="text-center">{{ it.quantity }}</td>
+                    <td class="text-end">{{ '%.2f'|format(it.price) }}</td>
+                    <td class="text-end">{{ '%.2f'|format(it.line_total) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {% if order.payment.receipt_path %}
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+          <h4 class="h6 mb-2"><i class="fas fa-credit-card me-2"></i>Payment Proof</h4>
+          <div class="small">Payment ID: <code>{{ order.payment.payment_id or '—' }}</code></div>
+          <a href="{{ order.payment.receipt_path }}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">View Receipt</a>
+          {% if order.payment.rejected_reason %}
+            <div class="text-danger small mt-2">Rejected: {{ order.payment.rejected_reason }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h4 class="h6 mb-3"><i class="fas fa-wrench me-2"></i>Actions</h4>
+
+          {% if order.payment_status == 'proof_uploaded' %}
+            <form action="/pharmacy/orders/{{ order._id }}/verify" method="post" class="d-grid gap-2 mb-2">
+              <button class="btn btn-success btn-sm"><i class="fas fa-check me-1"></i>Confirm Payment</button>
+            </form>
+            <form action="/pharmacy/orders/{{ order._id }}/reject" method="post" class="d-flex gap-2">
+              <input name="reason" class="form-control form-control-sm" placeholder="Reason" required>
+              <button class="btn btn-danger btn-sm"><i class="fas fa-times me-1"></i>Reject</button>
+            </form>
+          {% endif %}
+
+          <hr>
+
+          <form action="/pharmacy/orders/{{ order._id }}/dispatch" method="post" class="d-flex gap-2">
+            <input name="tracking_no" class="form-control form-control-sm" placeholder="Tracking (optional)">
+            <button class="btn btn-outline-primary btn-sm"><i class="fas fa-truck me-1"></i>Dispatch</button>
+          </form>
+
+          <form action="/pharmacy/orders/{{ order._id }}/delivered" method="post" class="mt-2 d-grid gap-2">
+            <button class="btn btn-outline-success btn-sm"><i class="fas fa-box-open me-1"></i>Mark Delivered</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
