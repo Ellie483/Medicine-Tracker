@@ -36,6 +36,7 @@ def buyer_home(request: Request, current_user: dict = Depends(require_role("buye
         "buyer_profile": buyer_profile  # Pass profile data directly
     })
 
+
 @router.get("/buyer/medicines", response_class=HTMLResponse)
 async def buyer_medicines(request: Request, current_user: dict = Depends(require_role("buyer"))):
     db = get_database()
@@ -70,6 +71,7 @@ async def buyer_medicines(request: Request, current_user: dict = Depends(require
         "current_user": current_user,
         "medicines": medicines_data
     })
+
 
 
 @router.get("/buyer/pharmacies", response_class=HTMLResponse)

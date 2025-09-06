@@ -234,3 +234,4 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #0b5ed7;
 }
+.progress-bar { width: var(--pct); }
