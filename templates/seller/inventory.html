@@ -129,7 +129,8 @@
                             <th class="text-center">Image</th>
                             <th>Medicine Name</th>
                             <th class="text-center">Stock</th>
-                            <th class="text-center">Price (Ks)</th>
+                            <th class="text-center">Buying Price (Ks)</th>
+                            <th class="text-center">Selling Price (Ks)</th>
                             <th class="text-center">Expiry Date</th>
                             <th class="text-center">Status</th>
                             <th class="text-center">Actions</th>
@@ -141,7 +142,8 @@
                             data-id="{{ medicine._id }}"
                             data-name="{{ medicine.name.lower() }}"
                             data-stock="{{ medicine.stock }}"
-                            data-price="{{ medicine.price }}"
+                            data-buying-price="{{ medicine.buying_price }}"
+                            data-selling-price="{{ medicine.selling_price }}"
                             data-expiry="{{ medicine.expiration_date }}"
                             data-expired="{{ medicine.is_expired|lower }}"
                             data-low-stock="{{ medicine.is_low_stock|lower }}"
@@ -171,7 +173,10 @@
                                 </div>
                             </td>
                             <td class="text-center">
-                                <strong class="text-success">{{ medicine.formatted_price }}</strong>
+                                <strong class="text-success">{{ medicine.formatted_buying_price }}</strong>
+                            </td>
+                            <td class="text-center">
+                                <strong class="text-success">{{ medicine.formatted_selling_price }}</strong>
                             </td>
                             <td class="text-center">
                                 <div>
@@ -323,27 +328,36 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label for="editDescription" class="form-label">Description</label>
+                            <label for="editDescription" class="form-label">Description *</label>
                             <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
                         </div>
                         
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="editStock" class="form-label">Stock Quantity *</label>
                                     <input type="number" class="form-control" id="editStock" name="stock" min="0" required>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="editPrice" class="form-label">Price (Ks) *</label>
-                                    <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0" required>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="editExpirationDate" class="form-label">Expiration Date *</label>
                                     <input type="date" class="form-control" id="editExpirationDate" name="expiration_date" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editBuyingPrice" class="form-label">Buying Price (Ks) *</label>
+                                    <input type="number" class="form-control" id="editBuyingPrice" name="buying_price" step="0.01" min="0" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editSellingPrice" class="form-label">Selling Price (Ks) *</label>
+                                    <input type="number" class="form-control" id="editSellingPrice" name="selling_price" step="0.01" min="0" required>
                                 </div>
                             </div>
                         </div>
@@ -521,7 +535,8 @@ function openEditModal(medicineId) {
     document.getElementById('editName').value = medicineRow.querySelector('strong').textContent;
     document.getElementById('editDescription').value = medicineRow.getAttribute('data-description') || '';
     document.getElementById('editStock').value = medicineRow.getAttribute('data-stock');
-    document.getElementById('editPrice').value = medicineRow.getAttribute('data-price');
+    document.getElementById('editBuyingPrice').value = medicineRow.getAttribute('data-buying-price');
+    document.getElementById('editSellingPrice').value = medicineRow.getAttribute('data-selling-price');
     document.getElementById('editExpirationDate').value = medicineRow.getAttribute('data-expiry');
     
     // Set current image

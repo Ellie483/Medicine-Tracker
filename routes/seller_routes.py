@@ -17,6 +17,14 @@ from fastapi.responses import JSONResponse
 from datetime import datetime, timedelta
 import json
 
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -35,70 +43,147 @@ def seller_profile_form(request: Request, current_user: dict = Depends(require_r
     return templates.TemplateResponse("seller_profile.html", {"request": request, "current_user": current_user})
 
 ####################################################################################
+# redirect to seller home
 
 @router.get("/seller/home")
 async def seller_home(request: Request, current_user: dict = Depends(require_role("seller"))):
     try:
         db = get_database()
         
-        # Get all orders for this seller
-        orders = list(db.orders.find({"pharmacy_name": current_user.get("pharmacy_name", "")}))
+        # 1. Get pharmacy profile for this seller using user_id
+        pharmacy_profile = db.pharmacy_profiles.find_one({
+            "user_id": ObjectId(current_user["id"])  # Convert string to ObjectId
+        })
         
-        # Get all medicines for this seller
+        if not pharmacy_profile:
+            return templates.TemplateResponse("seller/home.html", {
+                "request": request,
+                "current_user": current_user,
+                "error": "Pharmacy profile not found. Please complete your profile."
+            })
+        
+        pharmacy_name = pharmacy_profile.get("pharmacy_name", "")
+        print(pharmacy_name)
+        
+        # 2. Get only CONFIRMED or DELIVERED orders with PAID payment status for this pharmacy
+        # Use seller's ID (from session) to match pharmacy_id in orders
+        orders = list(db.Orders.find({
+            "pharmacy_id": current_user["id"],  # Match seller's ID with pharmacy_id in orders
+            "order_status": {"$in": ["confirmed", "delivered"]},
+            "payment_status": "paid"
+        }))
+        
+        print(f"✅ Found {len(orders)} orders for pharmacy_id: {current_user['id']}")
+        
+        # 3. Get all medicines for this seller
         medicines = list(db.Medicine.find({"seller_id": current_user["id"]}))
         
-        # Calculate statistics
+        # 4. Calculate statistics
         total_medicines = len(medicines)
         low_stock_count = sum(1 for med in medicines if 0 < med.get("stock", 0) <= 10)
         out_of_stock_count = sum(1 for med in medicines if med.get("stock", 0) == 0)
         expired_count = sum(1 for med in medicines if med.get("is_expired", False))
         
-        # Calculate total revenue
-        total_revenue = sum(order.get("total_amount", 0) for order in orders)
+        # 5. Calculate total revenue and profit from orders
+        total_revenue = 0
+        total_profit = 0
         orders_received = len(orders)
         
-        # Prepare dashboard data for charts (convert to JSON string for template)
+        for order in orders:
+            order_total = order.get("total_amount", 0)
+            total_revenue += order_total
+            
+            # Calculate profit: total_amount (selling) - total_buying_price
+            total_buying_price = 0
+            for item in order.get("items", []):
+                buying_price = item.get("buying_price", 0)
+                quantity = item.get("quantity", 0)
+                total_buying_price += buying_price * quantity
+            
+            order_profit = order_total - total_buying_price
+            total_profit += order_profit
+            
+            print(f"📦 Order {order.get('_id')}: Revenue={order_total}, Cost={total_buying_price}, Profit={order_profit}")
+        
+        print(f"📊 Total: Revenue={total_revenue}, Profit={total_profit}, Orders={orders_received}")
+        
+        # 6. Prepare dashboard data for charts - Convert all ObjectId to strings
         dashboard_data = {
             "orders": [],
             "medicines": [],
-            "total_revenue": total_revenue
+            "total_revenue": total_revenue,
+            "total_profit": total_profit,
+            "stats": {
+                "total_orders": orders_received,
+                "total_revenue": total_revenue,
+                "total_profit": total_profit
+            }
         }
         
-        # Process orders data for frontend
+        # 7. Process orders data for frontend - Ensure all ObjectId are converted to strings
         for order in orders:
+            # Calculate buying price and profit for this order
+            total_buying_price = 0
+            for item in order.get("items", []):
+                buying_price = item.get("buying_price", 0)
+                quantity = item.get("quantity", 0)
+                total_buying_price += buying_price * quantity
+            
+            order_profit = order.get("total_amount", 0) - total_buying_price
+            
+            # Convert all ObjectId to strings in items
+            processed_items = []
+            for item in order.get("items", []):
+                processed_item = {
+                    "medicine_id": str(item.get("medicine_id", "")),
+                    "medicine_name": item.get("medicine_name", ""),
+                    "quantity": item.get("quantity", 0),
+                    "price": item.get("price", 0),
+                    "buying_price": item.get("buying_price", 0),
+                    "total": item.get("total", 0)
+                }
+                processed_items.append(processed_item)
+            
             order_data = {
-                "order_id": str(order["_id"]),
+                "order_id": str(order.get("_id", "")),
                 "total_amount": order.get("total_amount", 0),
-                "status": order.get("status", "pending"),
+                "total_buying_price": total_buying_price,
+                "profit": order_profit,
+                "order_status": order.get("order_status", ""),
+                "payment_status": order.get("payment_status", ""),
                 "created_at": order["created_at"].isoformat() if isinstance(order.get("created_at"), datetime) else str(order.get("created_at", "")),
-                "items": order.get("items", [])
+                "items": processed_items  # Use processed items with string IDs
             }
             dashboard_data["orders"].append(order_data)
         
-        # Process medicines data for frontend
+        # 8. Process medicines data for frontend - Ensure all ObjectId are converted to strings
         for medicine in medicines:
             medicine_data = {
-                "medicine_id": str(medicine["_id"]),
-                "name": medicine["name"],
-                "price": medicine["price"],
-                "stock": medicine["stock"]
+                "medicine_id": str(medicine.get("_id", "")),
+                "name": medicine.get("name", "Unknown Medicine"),
+                "price": medicine.get("price", 0),
+                "buying_price": medicine.get("buying_price", 0),
+                "stock": medicine.get("stock", 0),
+                "profit_margin": medicine.get("price", 0) - medicine.get("buying_price", 0)
             }
             dashboard_data["medicines"].append(medicine_data)
         
-        # Convert to JSON string for passing to template
-        dashboard_data_json = json.dumps(dashboard_data)
+        # 9. Convert to JSON string using custom encoder
+        dashboard_data_json = json.dumps(dashboard_data, cls=JSONEncoder)
         
-        # Return HTML template with all data
+        # 10. Return HTML template with all data
         return templates.TemplateResponse("seller/home.html", {
             "request": request,
             "current_user": current_user,
+            "pharmacy_name": pharmacy_name,
             "total_medicines": total_medicines,
             "low_stock_count": low_stock_count,
             "out_of_stock_count": out_of_stock_count,
             "expired_count": expired_count,
             "orders_received": orders_received,
             "total_revenue": total_revenue,
-            "dashboard_data": dashboard_data_json  # Pass as JSON string
+            "total_profit": total_profit,
+            "dashboard_data": dashboard_data_json
         })
         
     except Exception as e:
@@ -106,27 +191,11 @@ async def seller_home(request: Request, current_user: dict = Depends(require_rol
         import traceback
         traceback.print_exc()
         
-        # Return template with error
         return templates.TemplateResponse("seller/home.html", {
             "request": request,
             "current_user": current_user,
             "error": "Failed to load dashboard data"
         })
-# @router.get("/seller/home", response_class=HTMLResponse)
-# def seller_home(request: Request, current_user: dict = Depends(require_role("seller"))):
-#     print(f"📦 Arrived at seller home for: {current_user['username']}")
-
-#     db = get_database()
-
-#     return templates.TemplateResponse(
-#         "seller/home.html",
-#         {
-#             "request": request,
-#             "current_user": current_user,
-#             "total_medicines": 0,
-#             "low_stock_count": 0,
-#         },
-#     )
 
 ####################################################################################
 # redirect to inventory page
@@ -179,7 +248,8 @@ def seller_inventory(request: Request, current_user: dict = Depends(require_role
             medicine_dict["is_expired"] = is_expired
             medicine_dict["is_low_stock"] = is_low_stock
             medicine_dict["is_out_of_stock"] = is_out_of_stock
-            medicine_dict["formatted_price"] = f"{medicine.get('price', 0):.2f}"
+            medicine_dict["formatted_buying_price"] = f"{medicine.get('buying_price', 0):.2f}"
+            medicine_dict["formatted_selling_price"] = f"{medicine.get('selling_price', 0):.2f}"
             
             # Add image URL if image exists
             if medicine.get("image_filename"):
@@ -255,7 +325,8 @@ async def seller_add_medicine(
     current_user: dict = Depends(require_role("seller")),
     name: str = Form(...),
     stock: int = Form(...),
-    price: float = Form(...),
+    buying_price: float = Form(...),
+    selling_price: float = Form(...),
     expiration_date: str = Form(...),
     description: str = Form(""),
     medicine_image: UploadFile = File(None)
@@ -273,7 +344,8 @@ async def seller_add_medicine(
     form_data = {
         "name": name,
         "stock": stock,
-        "price": price,
+        "buying_price": buying_price,
+        "selling_price": selling_price,
         "expiration_date": expiration_date,
         "description": description
     }
@@ -290,12 +362,30 @@ async def seller_add_medicine(
             "form_data": form_data
         })
     
-    if price <= 0:
+    if buying_price <= 0:
         print("❌ Validation failed: Price must be positive")
         return templates.TemplateResponse("seller/add_medicine.html", {
             "request": request,
             "current_user": current_user,
             "error": "Price must be greater than 0.",
+            "form_data": form_data
+        })
+    
+    if selling_price <= 0:
+        print("❌ Validation failed: Price must be positive")
+        return templates.TemplateResponse("seller/add_medicine.html", {
+            "request": request,
+            "current_user": current_user,
+            "error": "Price must be greater than 0.",
+            "form_data": form_data
+        })
+    
+    if selling_price < buying_price:
+        print("❌ Validation failed: Selling price must be greater than buying price.")
+        return templates.TemplateResponse("seller/add_medicine.html", {
+            "request": request,
+            "current_user": current_user,
+            "error": "Selling price must be greater than buying price.",
             "form_data": form_data
         })
     
@@ -355,7 +445,8 @@ async def seller_add_medicine(
             "seller_id": current_user["id"],
             "name": name,
             "stock": stock,
-            "price": price,
+            "buying_price": buying_price,
+            "selling_price": selling_price,
             "expiration_date": expiration_dt,
             "description": description.strip(),
             "image_filename": image_filename,
@@ -463,7 +554,8 @@ async def update_medicine(
     name: str = Form(...),
     description: str = Form(""),
     stock: int = Form(...),
-    price: float = Form(...),
+    buying_price: float = Form(...),
+    selling_price: float = Form(...),
     expiration_date: str = Form(...),
     medicine_image: UploadFile = File(None),
     current_user: dict = Depends(require_role("seller"))
@@ -485,7 +577,8 @@ async def update_medicine(
             "name": name,
             "description": description,
             "stock": stock,
-            "price": price,
+            "buying_price": buying_price,
+            "selling_price": selling_price,
             "expiration_date": datetime.strptime(expiration_date, "%Y-%m-%d"),
             "updated_at": datetime.utcnow()
         }
