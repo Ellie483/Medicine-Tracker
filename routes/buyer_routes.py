@@ -48,30 +48,35 @@ async def buyer_medicines(request: Request, current_user: dict = Depends(require
     })
 
     medicines = list(medicines_cursor)
-
     medicines_data = []
+
     for med in medicines:
-        pharmacy = db.pharmacy_profiles.find_one({"_id": ObjectId(med["seller_id"])})
-        
+        # Find pharmacy by seller_id → user_id in pharmacy_profiles
+        pharmacy = db.pharmacy_profiles.find_one({"user_id": med["seller_id"]})
+
         med_data = {
-            "_id": str(med["_id"]),  # Convert ObjectId to string for template
-            "name": med["name"],
-            "price": med["price"],
-            "stock": med["stock"],
-            "description": med["description"],
-            "formatted_price": f"${med['price']:.2f}",
-            "is_expired": med["expiration_date"] < datetime.utcnow(),
-            "expiration_date": med["expiration_date"].strftime("%Y-%m-%d"),
-            "pharmacy_name": pharmacy["pharmacy_name"] if pharmacy else "Unknown Pharmacy",
+            "_id": str(med["_id"]),
+            "name": med.get("name"),
+            "buying_price": med.get("buying_price"),
+            "selling_price": med.get("selling_price"),
+            "stock": med.get("stock"),
+            "description": med.get("description"),
+            "formatted_price": format_currency(med.get("selling_price", 0)),
+            "is_expired": med["expiration_date"] < datetime.utcnow() if med.get("expiration_date") else False,
+            "expiration_date": med["expiration_date"].strftime("%Y-%m-%d") if med.get("expiration_date") else None,
+            "pharmacy_name": pharmacy.get("pharmacy_name") if pharmacy else "Unknown Pharmacy",
+            "image_url": f"/static/uploads/{med.get('image_filename')}" if med.get("image_filename") else None,
         }
         medicines_data.append(med_data)
 
-    return templates.TemplateResponse("buyer/medicines.html", {
-        "request": request,
-        "current_user": current_user,
-        "medicines": medicines_data
-    })
-
+    return templates.TemplateResponse(
+        "buyer/medicines.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "medicines": medicines_data,
+        },
+    )
 
 
 @router.get("/buyer/pharmacies", response_class=HTMLResponse)
