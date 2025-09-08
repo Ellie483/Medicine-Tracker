@@ -49,7 +49,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 def format_currency(amount: float) -> str:
     """Format currency amount"""
-    return f"₹{amount:.2f}"
+    return f"{amount:.2f}Ks"
 
 def is_medicine_expired(expiration_date: datetime) -> bool:
     """Check if medicine is expired"""

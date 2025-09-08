@@ -176,7 +176,7 @@ function showNotification(message, type = 'info') {
 }
 
 function formatCurrency(amount) {
-    return '₹' + parseFloat(amount).toFixed(2);
+    return  parseFloat(amount).toFixed(2)+ 'Ks' ;
 }
 
 function formatDate(dateString) {
