@@ -63,6 +63,7 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="container-fluid">
     <!-- Header -->
     <div class="row mb-4">
@@ -91,6 +92,7 @@
         </div>
     </div>
 
+<<<<<<< HEAD
     <!-- Medicines Grid -->
     <div class="row" id="medicinesContainer">
         {% for medicine in medicines %}
@@ -112,75 +114,104 @@
                             <span class="text-primary fw-bold fs-5">{{ medicine.formatted_price }}</span>
                             <span class="text-muted small">Stock: {{ medicine.stock }}</span>
                         </div>
+=======
+```
+<!-- Medicines Grid -->
+<div class="row" id="medicinesContainer">
+    {% for medicine in medicines %}
+    <div class="col-lg-4 col-md-6 mb-4 medicine-card"
+         data-name="{{ medicine.name.lower() }}"
+         data-pharmacy="{{ medicine.pharmacy_name }}"
+         data-price="{{ medicine.price }}"
+         data-description="{{ medicine.description.lower() }}">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0">{{ medicine.name }}</h5>
+                    <span class="badge bg-success">Available</span>
+                </div>
+               
+                <div class="mb-3">
+                    <p class="text-muted small mb-2">{{ medicine.description or 'No description available' }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-primary fw-bold fs-5">{{ medicine.formatted_price }}</span>
+                        <span class="text-muted small">Stock: {{ medicine.stock }}</span>
+>>>>>>> origin/main
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center text-muted small">
-                            <i class="fas fa-store me-2"></i>
-                            <span>{{ medicine.pharmacy_name }}</span>
-                        </div>
-                        <div class="d-flex align-items-center text-muted small mt-1">
-                            <i class="fas fa-calendar me-2"></i>
-                            <span>Expires: {{ medicine.expiration_date }}</span>
-                        </div>
+                <div class="mb-3">
+                    <div class="d-flex align-items-center text-muted small">
+                        <i class="fas fa-store me-2"></i>
+                        <span>{{ medicine.pharmacy_name }}</span>
                     </div>
+                    <div class="d-flex align-items-center text-muted small mt-1">
+                        <i class="fas fa-calendar me-2"></i>
+                        <span>Expires: {{ medicine.expiration_date }}</span>
+                    </div>
+                </div>
 
-                    <div class="d-flex gap-2">
-                        <div class="flex-grow-1">
-                            <input type="number" class="form-control form-control-sm" 
-                                   id="quantity_{{ medicine._id }}" 
-                                   value="1" min="1" max="{{ medicine.stock }}" 
-                                   placeholder="Qty">
-                        </div>
-                        <button class="btn btn-primary btn-sm" onclick="addToCart('{{ medicine._id }}')">
-                            <i class="fas fa-cart-plus me-1"></i>Add to Cart
-                        </button>
+                <div class="d-flex gap-2">
+                    <div class="flex-grow-1">
+                        <input type="number" class="form-control form-control-sm"
+   id="new_quantity_input_{{ medicine._id|string }}"
+   value="1" min="1" max="{{ medicine.stock }}"
+   placeholder="Enter Quantity">
                     </div>
+                    <button class="btn btn-primary btn-sm" onclick="addToCart('{{ medicine._id|string }}')">
+
+                        <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                    </button>
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
+    {% endfor %}
+</div>
 
-    <!-- No Results Message -->
-    <div id="noResults" class="text-center py-5" style="display: none;">
-        <i class="fas fa-search fa-3x text-muted mb-3"></i>
-        <h4 class="text-muted">No medicines found</h4>
-        <p class="text-muted">Try adjusting your search criteria</p>
-    </div>
+
+
+<!-- No Results Message -->
+<div id="noResults" class="text-center py-5" style="display: none;">
+    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">No medicines found</h4>
+    <p class="text-muted">Try adjusting your search criteria</p>
+</div>
+```
+
 </div>
 
 <script>
-async function addToCart(medicineId) {
-    const quantity = document.getElementById(`quantity_${medicineId}`).value;
-
-    console.log('Adding to cart:', {
-        medicine_id: medicineId,
-        quantity: quantity
-    });
-
-    try {
+   
+    async function addToCart(medicineId) {
+        // Correctly get the new input element by its ID
+        const qtyInput = document.getElementById(`new_quantity_input_${medicineId}`);
+   
+        if (!qtyInput) {
+            console.error("New input not found for medicineId:", medicineId);
+            return;
+        }
+   
+        const quantity = parseInt(qtyInput.value);
+       
+        if (isNaN(quantity) || quantity < 1) {
+            alert("Please enter a valid quantity.");
+            return;
+        }
+   
+        console.log("Medicine ID:", medicineId, "Quantity:", quantity);
+   
+        const formData = new FormData();
+        formData.append("medicine_id", medicineId);
+        formData.append("quantity", quantity);
+   
         const response = await fetch('/buyer/add_to_cart', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                medicine_id: medicineId,
-                quantity: quantity
-            })
+            body: formData
         });
-
+   
         const result = await response.json();
-
-        if (response.ok) {
-            alert(result.message); // Show success message
-        } else {
-            alert(result.message); // Show error message
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert('An error occurred while adding to cart.');
+        alert(result.message);
     }
 }
 // Search Functionality
@@ -211,3 +242,4 @@ function searchMedicines() {
 }
 </script>
 {% endblock %}
+

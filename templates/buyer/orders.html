@@ -1,276 +1,370 @@
 {% extends "base.html" %}
+{% block title %}My Orders · Medicine Tracker{% endblock %}
 
-{% block title %}My Orders - Medicine Tracker{% endblock %}
+{# ---------- helpers ---------- #}
+{% macro status_badge(s) -%}
+  {% set s = (s or 'unknown')|lower %}
+  {% if s == 'confirmed' %}<span class="badge rounded-pill bg-success"><i class="fas fa-check me-1"></i>Confirmed</span>
+  {% elif s == 'pending' %}<span class="badge rounded-pill bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending</span>
+  {% elif s == 'delivered' %}<span class="badge rounded-pill bg-info text-dark"><i class="fas fa-truck me-1"></i>Delivered</span>
+  {% elif s == 'cart' %}<span class="badge rounded-pill bg-secondary"><i class="fas fa-shopping-basket me-1"></i>In Cart</span>
+  {% else %}<span class="badge rounded-pill bg-secondary">{{ s|title }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro payment_badge(s) -%}
+  {% if (s or '')|lower == 'paid' %}
+    <span class="badge rounded-pill bg-success"><i class="fas fa-check me-1"></i>Paid</span>
+  {% else %}
+    <span class="badge rounded-pill bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending Payment</span>
+  {% endif %}
+{%- endmacro %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-1"><i class="fas fa-shopping-cart me-2 text-success"></i>My Orders</h2>
-                    <p class="text-muted mb-0">Track your medicine orders and payment status</p>
-                </div>
-                <div>
-                    <span class="badge bg-success fs-6">{{ orders|length }} Total Orders</span>
-                </div>
-            </div>
-        </div>
+<div class="container-xxl py-3">
+  <!-- Page header -->
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-4">
+    <div>
+      <h2 class="h3 mb-1"><i class="fas fa-shopping-cart me-2 text-success"></i>My Orders</h2>
+      <p class="text-muted mb-0">Track your medicine orders, delivery, and payments.</p>
     </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill px-3 py-2">
+        <i class="fas fa-list me-1"></i>{{ orders|length }} total
+      </span>
+    </div>
+  </div>
 
-    {% if orders %}
-    <!-- Orders List -->
-    <div class="row">
-        {% for order in orders %}
-        <div class="col-12 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h5 class="mb-1">
-                                <i class="fas fa-receipt me-2 text-primary"></i>
-                                Order #{{ order._id|string|truncate(8, true, '...') }}
-                            </h5>
-                            <small class="text-muted">
-                                <i class="fas fa-calendar me-1"></i>
-                                {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}
-                            </small>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <div class="mb-2">
-                                {% if order.status == 'confirmed' %}
-                                <span class="badge bg-success fs-6">
-                                    <i class="fas fa-check me-1"></i>Confirmed
-                                </span>
-                                {% elif order.status == 'pending' %}
-                                <span class="badge bg-warning fs-6">
-                                    <i class="fas fa-clock me-1"></i>Pending
-                                </span>
-                                {% elif order.status == 'delivered' %}
-                                <span class="badge bg-info fs-6">
-                                    <i class="fas fa-truck me-1"></i>Delivered
-                                </span>
-                                {% else %}
-                                <span class="badge bg-secondary fs-6">{{ order.status|title }}</span>
-                                {% endif %}
-                            </div>
-                            <div class="fw-bold text-success fs-5">{{ order.formatted_total }}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <!-- Order Items -->
-                            <h6 class="mb-3">
-                                <i class="fas fa-pills me-2 text-primary"></i>Order Items
-                            </h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Medicine</th>
-                                            <th>Quantity</th>
-                                            <th>Price</th>
-                                            <th>Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for item in order.items %}
-                                        <tr>
-                                            <td>{{ item.medicine_name }}</td>
-                                            <td>{{ item.quantity }}</td>
-                                            <td>₹{{ "%.2f"|format(item.price) }}</td>
-                                            <td>₹{{ "%.2f"|format(item.quantity * item.price) }}</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            <!-- Pharmacy Info -->
-                            <h6 class="mb-3">
-                                <i class="fas fa-store me-2 text-info"></i>Pharmacy Details
-                            </h6>
-                            <div class="mb-3">
-                                <strong>{{ order.pharmacy_name }}</strong>
-                            </div>
-                            
-                            <!-- Payment Status -->
-                            <h6 class="mb-3">
-                                <i class="fas fa-credit-card me-2 text-warning"></i>Payment Status
-                            </h6>
-                            <div class="mb-3">
-                                {% if order.payment_status == 'paid' %}
-                                <span class="badge bg-success">
-                                    <i class="fas fa-check me-1"></i>Paid
-                                </span>
-                                {% else %}
-                                <span class="badge bg-warning">
-                                    <i class="fas fa-clock me-1"></i>Pending Payment
-                                </span>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- Actions -->
-                            <div class="d-grid gap-2">
-                                {% if order.payment_status != 'paid' %}
-                                <a href="/buyer/checkout/{{ order._id }}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-credit-card me-1"></i>Pay Now
-                                </a>
-                                {% endif %}
-                                
-                                {% if order.qr_code_path %}
-                                <button class="btn btn-outline-info btn-sm" onclick="showQR('{{ order._id }}')">
-                                    <i class="fas fa-qrcode me-1"></i>Show QR Code
-                                </button>
-                                {% endif %}
-                                
-                                {% if order.receipt_path %}
-                                <a href="/static/receipts/{{ order.receipt_path }}" target="_blank" class="btn btn-outline-success btn-sm">
-                                    <i class="fas fa-download me-1"></i>Download Receipt
-                                </a>
-                                {% else %}
-                                <button class="btn btn-outline-secondary btn-sm" onclick="uploadReceipt('{{ order._id }}')">
-                                    <i class="fas fa-upload me-1"></i>Upload Receipt
-                                </button>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <!-- KPI strip -->
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-sm-4">
+      <div class="card kpi-card shadow-sm border-0">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="kpi-icon text-primary"><i class="fas fa-receipt"></i></div>
+          <div>
+            <div class="text-muted small">Orders</div>
+            <div class="fs-5 fw-semibold">{{ orders|length }}</div>
+          </div>
         </div>
-        {% endfor %}
+      </div>
     </div>
-    
-    {% else %}
-    <!-- Empty State -->
-    <div class="row">
-        <div class="col-12">
-            <div class="text-center py-5">
-                <i class="fas fa-shopping-cart fa-4x text-muted mb-4"></i>
-                <h3 class="text-muted mb-3">No orders yet</h3>
-                <p class="text-muted mb-4">Start browsing medicines to place your first order</p>
-                <a href="/buyer/medicines" class="btn btn-primary">
-                    <i class="fas fa-pills me-2"></i>Browse Medicines
-                </a>
+    <div class="col-6 col-sm-4">
+      <div class="card kpi-card shadow-sm border-0">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="kpi-icon text-success"><i class="fas fa-check-circle"></i></div>
+          <div>
+            <div class="text-muted small">Paid</div>
+            <div class="fs-5 fw-semibold">
+              {{ orders|selectattr('payment_status','equalto','paid')|list|length }}
             </div>
+          </div>
         </div>
+      </div>
     </div>
-    {% endif %}
+    <div class="col-6 col-sm-4">
+      <div class="card kpi-card shadow-sm border-0">
+        <div class="card-body d-flex align-items-center gap-3">
+          <div class="kpi-icon text-warning"><i class="fas fa-hourglass-half"></i></div>
+          <div>
+            <div class="text-muted small">Awaiting Payment</div>
+            <div class="fs-5 fw-semibold">
+              {{ orders|rejectattr('payment_status','equalto','paid')|list|length }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form class="row g-2 align-items-center" method="get" action="">
+        <div class="col-12 col-md-4">
+          <div class="input-group">
+            <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+            <input name="q" value="{{ request.query_params.get('q','') }}" type="search" class="form-control" placeholder="Search order ID or pharmacy">
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <select name="status" class="form-select">
+            {% set s = request.query_params.get('status','') %}
+            <option value="">All statuses</option>
+            <option value="cart" {{ 'selected' if s=='cart' }}>In Cart</option>
+            <option value="pending" {{ 'selected' if s=='pending' }}>Pending</option>
+            <option value="confirmed" {{ 'selected' if s=='confirmed' }}>Confirmed</option>
+            <option value="delivered" {{ 'selected' if s=='delivered' }}>Delivered</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <select name="sort" class="form-select">
+            {% set sort = request.query_params.get('sort','created_desc') %}
+            <option value="created_desc" {{ 'selected' if sort=='created_desc' }}>Newest</option>
+            <option value="created_asc"  {{ 'selected' if sort=='created_asc'  }}>Oldest</option>
+            <option value="total_desc"   {{ 'selected' if sort=='total_desc'   }}>Amount: High → Low</option>
+            <option value="total_asc"    {{ 'selected' if sort=='total_asc'    }}>Amount: Low → High</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2 d-grid">
+          <button class="btn btn-primary" type="submit" aria-label="Apply filters"><i class="fas fa-filter me-1"></i>Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if orders and orders|length > 0 %}
+    <div class="vstack gap-3">
+      {% for order in orders %}
+        <article class="card border-0 shadow-sm order-card">
+          <header class="card-header bg-white border-0 pb-0">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+              <div>
+                <h3 class="h6 mb-1">
+                  <i class="fas fa-receipt me-2 text-primary"></i>
+                  Order #{{ (order._id|string)|truncate(8, True, '…') }}
+                </h3>
+                <div class="text-muted small">
+                  <i class="fas fa-calendar me-1"></i>
+                  {{ order.created_at_str or order.created_at or "—" }}
+                </div>
+              </div>
+              <div class="text-md-end">
+                <div class="mb-2">{{ status_badge(order.status) }}</div>
+                <div class="fw-bold text-success fs-5">{{ order.formatted_total or ('₹' ~ ('%.2f'|format(order.total or 0))) }}</div>
+              </div>
+            </div>
+          </header>
+
+          <div class="card-body">
+            <div class="row g-4">
+              <!-- Items -->
+              <section class="col-md-8">
+                <h4 class="h6 mb-3"><i class="fas fa-pills me-2 text-primary"></i>Items</h4>
+                <div class="table-responsive">
+                  <table class="table align-middle table-sm mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th scope="col">Medicine</th>
+                        <th scope="col" class="text-center">Qty</th>
+                        <th scope="col" class="text-end">Price</th>
+                        <th scope="col" class="text-end">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for item in order.get('items', []) %}
+                        <tr>
+                          <td>{{ item['medicine_name'] }}</td>
+                          <td class="text-center">{{ item['quantity'] }}</td>
+                          <td class="text-end">₹{{ '%.2f'|format(item['price']) }}</td>
+                          <td class="text-end">₹{{ '%.2f'|format((item['quantity'] or 0) * (item['price'] or 0)) }}</td>
+                        </tr>
+                      {% else %}
+                        <tr>
+                          <td colspan="4" class="text-center text-muted">No items</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                    
+                  </table>
+                </div>
+              </section>
+
+              <!-- Side panel -->
+              <aside class="col-md-4">
+                <div class="mb-3">
+                  <h4 class="h6 mb-2"><i class="fas fa-store me-2 text-info"></i>Pharmacy</h4>
+                  <div class="fw-semibold">{{ order.pharmacy_name or '—' }}</div>
+                  {% if order.pharmacy_address %}<div class="text-muted small">{{ order.pharmacy_address }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                  <h4 class="h6 mb-2"><i class="fas fa-credit-card me-2 text-warning"></i>Payment</h4>
+                  {{ payment_badge(order.payment_status) }}
+                </div>
+
+                {% if order.status in ['pending','confirmed'] %}
+                  <div class="mb-3">
+                    <h4 class="h6 mb-2"><i class="fas fa-route me-2 text-secondary"></i>Progress</h4>
+                    {# simple status-based progress #}
+                    {% set step_index = {'cart': 0, 'pending': 1, 'confirmed': 2, 'delivered': 3} %}
+{% set steps_count = 4 %}
+{% set idx = step_index.get((order.status or 'cart')|lower, 0) %}
+{# make sure pct is an integer 0..100 #}
+{% set pct = (((idx / (steps_count - 1)) * 100) | round(0, 'floor')) | int %}
+
+<div class="mb-3">
+  <h4 class="h6 mb-2"><i class="fas fa-route me-2 text-secondary"></i>Progress</h4>
+  <div class="progress">
+  <div class="progress-bar" role="progressbar"
+       aria-label="Order progress"
+       aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"
+       style="--pct: {{ pct }}%;">
+  </div>
 </div>
 
-<!-- QR Code Modal -->
-<div class="modal fade" id="qrModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-qrcode me-2"></i>Payment QR Code
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="qrImage" src="" alt="QR Code" class="img-fluid mb-3" style="max-width: 300px;">
-                <p class="text-muted">Scan this QR code to make payment</p>
-            </div>
-        </div>
-    </div>
+  <div class="d-flex justify-content-between small text-muted mt-1">
+    <span>Cart</span><span>Pending</span><span>Confirmed</span><span>Delivered</span>
+  </div>
 </div>
 
-<!-- Receipt Upload Modal -->
-<div class="modal fade" id="receiptModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-upload me-2"></i>Upload Payment Receipt
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="receiptForm" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <input type="hidden" id="receiptOrderId" name="order_id">
-                    <div class="mb-3">
-                        <label for="receiptFile" class="form-label">Select Receipt File</label>
-                        <input type="file" class="form-control" id="receiptFile" name="receipt" accept="image/*,.pdf" required>
-                        <div class="form-text">Upload image or PDF file of your payment receipt</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-upload me-1"></i>Upload Receipt
+
+                {% endif %}
+
+                <div class="d-grid gap-2">
+                  {% if order.status == 'cart' %}
+                    <a href="/buyer/cart/{{ order._id }}" class="btn btn-outline-primary btn-sm" aria-label="View cart">
+                      <i class="fas fa-shopping-basket me-1"></i>View Cart
+                    </a>
+                    <form action="/buyer/cart/{{ order._id }}/checkout" method="post" class="d-grid">
+                      <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-credit-card me-1"></i>Checkout
+                      </button>
+                    </form>
+                  {% else %}
+                    {% if (order.payment_status or '')|lower != 'paid' %}
+                      <a href="/buyer/checkout/{{ order._id }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-credit-card me-1"></i>Pay Now
+                      </a>
+                    {% endif %}
+                  {% endif %}
+
+                  {% if order.qr_code_path %}
+                    <button class="btn btn-outline-info btn-sm" onclick="showQR('{{ order._id }}')" aria-haspopup="dialog">
+                      <i class="fas fa-qrcode me-1"></i>Show QR Code
                     </button>
+                  {% endif %}
+
+                  {% if order.receipt_path %}
+                    <a href="/static/receipts/{{ order.receipt_path }}" target="_blank" class="btn btn-outline-success btn-sm">
+                      <i class="fas fa-download me-1"></i>Download Receipt
+                    </a>
+                  {% else %}
+                    <button class="btn btn-outline-secondary btn-sm" onclick="uploadReceipt('{{ order._id }}')" aria-haspopup="dialog">
+                      <i class="fas fa-upload me-1"></i>Upload Receipt
+                    </button>
+                  {% endif %}
                 </div>
-            </form>
-        </div>
+              </aside>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
     </div>
+
+    {# Optional: pagination footer (wire up on backend if needed) #}
+    {# 
+    <nav class="mt-4" aria-label="Orders pagination">
+      <ul class="pagination justify-content-center">
+        <li class="page-item disabled"><span class="page-link">Prev</span></li>
+        <li class="page-item active"><span class="page-link">1</span></li>
+        <li class="page-item"><a class="page-link" href="?page=2">2</a></li>
+        <li class="page-item"><a class="page-link" href="?page=3">3</a></li>
+        <li class="page-item"><a class="page-link" href="?page=2">Next</a></li>
+      </ul>
+    </nav>
+    #}
+
+  {% else %}
+    <div class="text-center py-5">
+      <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+      <h3 class="fw-semibold mb-1">No orders yet</h3>
+      <p class="text-muted mb-4">Start browsing medicines to place your first order.</p>
+      <a href="/buyer/medicines" class="btn btn-primary">
+        <i class="fas fa-pills me-2"></i>Browse Medicines
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{# ---------- Modals (if your base.html doesn’t include them) ---------- #}
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="qrModalLabel"><i class="fas fa-qrcode me-2"></i>Payment QR</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="qrImage" src="" alt="QR code" class="img-fluid rounded border">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="receiptForm" class="modal-content" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title" id="receiptModalLabel"><i class="fas fa-file-invoice me-2"></i>Upload Receipt</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="order_id" id="receiptOrderId">
+        <div class="mb-3">
+          <label for="receiptFile" class="form-label">Choose file</label>
+          <input class="form-control" type="file" id="receiptFile" name="file" accept="image/*,application/pdf" required>
+          <div class="form-text">Accepted: JPG, PNG, PDF</div>
+        </div>
+        <div class="mb-0">
+          <label for="receiptNote" class="form-label">Note (optional)</label>
+          <textarea class="form-control" id="receiptNote" name="note" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit"><i class="fas fa-upload me-1"></i>Upload</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
 function showQR(orderId) {
-    document.getElementById('qrImage').src = `/static/qr_codes/order_${orderId}.png`;
-    new bootstrap.Modal(document.getElementById('qrModal')).show();
+  const el = document.getElementById('qrImage');
+  if (el) el.src = `/static/qr_codes/order_${orderId}.png`;
+  const modal = document.getElementById('qrModal');
+  if (modal) new bootstrap.Modal(modal).show();
 }
-
 function uploadReceipt(orderId) {
-    document.getElementById('receiptOrderId').value = orderId;
-    new bootstrap.Modal(document.getElementById('receiptModal')).show();
+  const input = document.getElementById('receiptOrderId');
+  if (input) input.value = orderId;
+  const modal = document.getElementById('receiptModal');
+  if (modal) new bootstrap.Modal(modal).show();
+}
+const form = document.getElementById('receiptForm');
+if (form) {
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    try {
+      const response = await fetch('/upload_receipt', { method: 'POST', body: formData });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          bootstrap.Modal.getInstance(document.getElementById('receiptModal'))?.hide();
+          location.reload();
+        } else {
+          alert('Error: ' + (result.message || 'Upload failed'));
+        }
+      } else {
+        alert('Failed to upload receipt. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
+    }
+  });
 }
 
-// Handle receipt upload
-document.getElementById('receiptForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    
-    try {
-        const response = await fetch('/upload_receipt', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-                bootstrap.Modal.getInstance(document.getElementById('receiptModal')).hide();
-                location.reload(); // Refresh to show updated status
-            } else {
-                alert('Error: ' + result.message);
-            }
-        } else {
-            alert('Failed to upload receipt. Please try again.');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
-    }
-});
 </script>
 
 <style>
-.card {
-    transition: transform 0.2s ease-in-out;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-}
-
-.table th {
-    border-top: none;
-    font-weight: 600;
-    color: #495057;
-}
-
-.badge {
-    font-size: 0.8em;
-}
+/* Light polish while keeping Bootstrap look */
+.kpi-card .kpi-icon { font-size: 1.5rem; }
+.order-card { transition: transform .18s ease, box-shadow .18s ease; border-radius: .85rem; }
+.order-card:hover { transform: translateY(-2px); box-shadow: 0 0.6rem 1.2rem rgba(0,0,0,.07); }
+.table th { border-top: none; font-weight: 600; color: #495057; }
+.badge { font-size: .82rem; }
+.progress { height: .5rem; }
 </style>
 {% endblock %}
