@@ -123,7 +123,7 @@
                                         {{ medicine.stock }}
                                     </span>
                                 </td>
-                                <td>₹{{ "%.2f"|format(medicine.price) }}</td>
+                                <td>{{ "%.2f"|format(medicine.price) }}Ks</td>
                                 <td>{{ medicine.expiration_date.strftime('%Y-%m-%d') }}</td>
                                 <td>
                                     {% if medicine.expiration_date < current_time %}
@@ -175,7 +175,7 @@
                         <small class="text-muted">{{ order.created_at.strftime('%m/%d') }}</small>
                     </div>
                     <div class="d-flex justify-content-between">
-                        <small>₹{{ "%.2f"|format(order.total_amount) }}</small>
+                        <small>{{ "%.2f"|format(order.total_amount) }}Ks</small>
                         <span class="badge bg-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% else %}success{% endif %} badge-sm">
                             {{ order.status.title() }}
                         </span>

@@ -48,7 +48,7 @@
         <div class="col-md-3 mb-3">
             <div class="card border-0 bg-warning text-white">
                 <div class="card-body text-center">
-                    <h4>₹{{ "%.0f"|format(orders|sum(attribute='total_amount')) }}</h4>
+                    <h4>Ks{{ "%.0f"|format(orders|sum(attribute='total_amount')) }}</h4>
                     <p class="mb-0">Total Revenue</p>
                 </div>
             </div>
@@ -182,8 +182,8 @@
                                         <tr>
                                             <td>{{ item.medicine_name }}</td>
                                             <td>{{ item.quantity }}</td>
-                                            <td>₹{{ "%.2f"|format(item.price) }}</td>
-                                            <td>₹{{ "%.2f"|format(item.quantity * item.price) }}</td>
+                                            <td>{{ "%.2f"|format(item.price) }}Ks</td>
+                                            <td>{{ "%.2f"|format(item.quantity * item.price) }}Ks</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>

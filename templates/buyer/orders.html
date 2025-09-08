@@ -130,7 +130,7 @@
               </div>
               <div class="text-md-end">
                 <div class="mb-2">{{ status_badge(order.status) }}</div>
-                <div class="fw-bold text-success fs-5">{{ order.formatted_total or ('₹' ~ ('%.2f'|format(order.total or 0))) }}</div>
+                <div class="fw-bold text-success fs-5">{{ order.formatted_total or ( ('%.2f'|format(order.total or 0))) ~ 'Ks'}}</div>
               </div>
             </div>
           </header>
@@ -155,8 +155,8 @@
                         <tr>
                           <td>{{ item['medicine_name'] }}</td>
                           <td class="text-center">{{ item['quantity'] }}</td>
-                          <td class="text-end">₹{{ '%.2f'|format(item['price']) }}</td>
-                          <td class="text-end">₹{{ '%.2f'|format((item['quantity'] or 0) * (item['price'] or 0)) }}</td>
+                          <td class="text-end">{{ '%.2f'|format(item['price']) }}Ks</td>
+                          <td class="text-end">{{ '%.2f'|format((item['quantity'] or 0) * (item['price'] or 0)) }}Ks</td>
                         </tr>
                       {% else %}
                         <tr>
