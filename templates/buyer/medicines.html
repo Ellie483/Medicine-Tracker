@@ -2,18 +2,90 @@
 
 {% block title %}Browse Medicines - Medicine Tracker{% endblock %}
 
+{% block head %}
+<style>
+/* Search Box styles */
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;  /* Align search box to the right */
+    background: #fff;
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 2px solid var(--primary-color);
+    max-width: 800px;  /* Adjust width */
+    padding-right: 5px;
+    transition: box-shadow 0.3s ease;
+}
+
+.search-wrapper:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 14px 25px;
+    font-size: 16px;
+    border-radius: 50px 0 0 50px;
+    background-color: transparent;
+}
+
+.search-input::placeholder {
+    color: #aaa;
+}
+
+#search-icon {
+    background-color: transparent; /* Button stays transparent */
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    transition: transform 0.2s ease;
+}
+
+#search-icon i {
+    font-size: 20px;
+    color: #0d6efd; /* Icon is blue */
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+#search-icon:hover i {
+    transform: scale(1.2); /* Slight zoom effect */
+    color: #0b5ed7; /* Darker blue on hover */
+}
+
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
+                <!-- Left side content: Title and description -->
                 <div>
                     <h2 class="mb-1"><i class="fas fa-pills me-2 text-primary"></i>Browse Medicines</h2>
                     <p class="text-muted mb-0">Find and order medicines from nearby pharmacies</p>
                 </div>
-                <div>
-                    <span class="badge bg-info fs-6">{{ medicines|length }} Available</span>
+
+                <!-- Right side content: Search Box -->
+                <div class="d-flex align-items-center">
+                    <!-- Search Box -->
+                    <div class="search-wrapper mt-3">
+                        <input type="text" id="searchBox" class="search-input" placeholder="Search medicines..." onkeyup="searchMedicines()">
+                        <button class="search-btn" id="search-icon" aria-label="Search">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+
+                    <!-- Available Badge -->
+                    <span class="badge bg-info fs-6 ms-3">{{ medicines|length if medicines else 0 }} Available</span>
                 </div>
             </div>
         </div>
@@ -31,7 +103,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <h5 class="card-title mb-0">{{ medicine.name }}</h5>
-                        <span class="badge bg-success">Available</span>
+                        <span class="badge bg-success">Available</span>  <!-- The 'Available' badge -->
                     </div>
                     
                     <div class="mb-3">
@@ -111,7 +183,31 @@ async function addToCart(medicineId) {
         alert('An error occurred while adding to cart.');
     }
 }
+// Search Functionality
+function searchMedicines() {
+    const searchQuery = document.getElementById("searchBox").value.toLowerCase();
+    const medicineCards = document.querySelectorAll(".medicine-card");
+    let found = false;
 
+    medicineCards.forEach(card => {
+        const name = card.getAttribute("data-name");
+        const description = card.getAttribute("data-description");
 
+        if (name.includes(searchQuery) || description.includes(searchQuery)) {
+            card.style.display = "block"; // Show matching card
+            found = true;
+        } else {
+            card.style.display = "none"; // Hide non-matching card
+        }
+    });
+
+    // Display "No Results" message if no medicines match the search
+    const noResults = document.getElementById("noResults");
+    if (found) {
+        noResults.style.display = "none";
+    } else {
+        noResults.style.display = "block";
+    }
+}
 </script>
 {% endblock %}
