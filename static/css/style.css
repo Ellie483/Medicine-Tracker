@@ -10,9 +10,21 @@
     --dark-color: #212529;
 }
 
+
 body {
     background-color: #f5f6fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+
+.overview-cards-row {
+    gap: 2rem;
+}
+.overview-card {
+    min-width: 300px;
+    max-width: 350px;
+    flex: 1 1 300px;
 }
 
 .navbar-brand {

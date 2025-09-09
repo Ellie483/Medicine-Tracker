@@ -7,7 +7,7 @@
     <span class="badge rounded-pill bg-success"><i class="fas fa-box-open me-1"></i>Delivered</span>
   {% elif s == 'confirmed' %}
     <span class="badge rounded-pill bg-primary"><i class="fas fa-check me-1"></i>Confirmed</span>
-  {% elif s == 'pending' or s == 'placed' %}
+  {% elif s in ['pending','placed'] %}
     <span class="badge rounded-pill bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending</span>
   {% elif s == 'cart' %}
     <span class="badge rounded-pill bg-secondary"><i class="fas fa-shopping-basket me-1"></i>Cart</span>
@@ -57,7 +57,7 @@
       <select name="status" class="form-select">
         <option value="">Any status</option>
         {% for s in ['cart','pending','confirmed','delivered'] %}
-          <option value="{{ s }}" {{ 'selected' if sel_status==s }}>{{ s|title }}</option>
+          <option value="{{ s }}" {{ 'selected' if sel_status==s else '' }}>{{ s|title }}</option>
         {% endfor %}
       </select>
     </div>
@@ -67,7 +67,7 @@
       <select name="payment" class="form-select">
         <option value="">Any payment</option>
         {% for p in ['unpaid','proof_uploaded','rejected','paid'] %}
-          <option value="{{ p }}" {{ 'selected' if sel_payment==p }}>{{ p|replace('_',' ')|title }}</option>
+          <option value="{{ p }}" {{ 'selected' if sel_payment==p else '' }}>{{ p|replace('_',' ')|title }}</option>
         {% endfor %}
       </select>
     </div>
@@ -75,10 +75,10 @@
     <div class="col-6 col-lg-2">
       {% set sort = request.query_params.get('sort','created_desc') %}
       <select name="sort" id="sortSelect" class="form-select">
-        <option value="created_desc" {{ 'selected' if sort=='created_desc' }}>Newest First</option>
-        <option value="created_asc"  {{ 'selected' if sort=='created_asc'  }}>Oldest First</option>
-        <option value="total_desc"   {{ 'selected' if sort=='total_desc'   }}>Amount: High → Low</option>
-        <option value="total_asc"    {{ 'selected' if sort=='total_asc'    }}>Amount: Low → High</option>
+        <option value="created_desc" {{ 'selected' if sort=='created_desc' else '' }}>Newest First</option>
+        <option value="created_asc"  {{ 'selected' if sort=='created_asc'  else '' }}>Oldest First</option>
+        <option value="total_desc"   {{ 'selected' if sort=='total_desc'   else '' }}>Amount: High → Low</option>
+        <option value="total_asc"    {{ 'selected' if sort=='total_asc'    else '' }}>Amount: Low → High</option>
       </select>
     </div>
 
@@ -91,8 +91,9 @@
     <div class="row g-3">
       {% for o in orders %}
         {% set items = o.get('items', []) %}
-        {% set first_name = items[0]['medicine_name'] if items|length else '—' %}
-        {% set qty_total = items|map(attribute='quantity')|sum if items|length else 0 %}
+        {% set first_name = (items[0]['medicine_name'] if items|length else '—') %}
+        {# robust qty total even if quantity missing #}
+        {% set qty_total = items|map(attribute='quantity')|select|sum if items|length else 0 %}
 
         <div class="col-12 col-xl-6">
           <article class="card border-0 shadow-sm h-100 order-card">
@@ -116,16 +117,18 @@
 
               <!-- Total + Buyer -->
               <div class="d-flex justify-content-between align-items-center">
-                <div class="fw-semibold fs-5 text-success">{{ o.formatted_total }}</div>
+                <div class="fw-semibold fs-5 text-success">{{ o.formatted_total or '0.00Ks' }}</div>
                 <span class="small text-muted">
-                  <i class="fas fa-user me-1"></i>Buyer: {{ o.buyer_display or '—' }}
+                  <i class="fas fa-user me-1"></i>Buyer:
+                  {{ (o.buyer_display or '').strip() or '—' }}
                 </span>
               </div>
 
               <!-- Items summary -->
               <div class="small">
                 <i class="fas fa-box me-1 text-muted"></i>
-                {% if items|length == 0 %}No items
+                {% if items|length == 0 %}
+                  No items
                 {% elif items|length == 1 %}
                   {{ first_name }} · Qty {{ qty_total }}
                 {% else %}
@@ -134,7 +137,6 @@
                 {% endif %}
               </div>
 
-              <!-- Optional: short ship-to line if you pass it -->
               {% if o.address or o.city %}
               <div class="small text-muted">
                 <i class="fas fa-location-dot me-1"></i>{{ o.address or '' }}{% if o.city %}, {{ o.city }}{% endif %}
@@ -172,18 +174,17 @@
 .order-card:hover{transform:translateY(-2px);box-shadow:0 .6rem 1.2rem rgba(0,0,0,.07);}
 </style>
 {% endblock %}
+
+{% block extra_js %}
 <script>
-  (() => {
-    const form = document.querySelector('form[method="get"]');
-    if (!form) return;
-    form.querySelectorAll('select').forEach(sel => {
-      sel.addEventListener('change', () => form.submit());
-    });
-    const q = form.querySelector('input[name="q"]');
-    if (q) {
-      q.addEventListener('keydown', e => {
-        if (e.key === 'Enter') form.submit();
-      });
-    }
-  })();
+(() => {
+  const form = document.querySelector('form[method="get"]');
+  if (!form) return;
+  form.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', () => form.submit());
+  });
+  const q = form.querySelector('input[name="q"]');
+  if (q) q.addEventListener('keydown', e => { if (e.key === 'Enter') form.submit(); });
+})();
 </script>
+{% endblock %}

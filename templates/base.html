@@ -43,9 +43,28 @@
                 <li class="nav-item"><a class="nav-link text-white" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
               {% endif %}
             </ul>
-      
+            
+ 
             <!-- Right nav -->
             <ul class="navbar-nav ms-auto">
+              <a class="nav-link position-relative text-white me-2" 
+   href="#" id="notifDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+  <i class="fas fa-bell fa-lg"></i>   <!-- fa-lg, fa-xl, or fa-2x for bigger size -->
+  <span id="notifBadge" 
+        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+    0
+  </span>
+</a>
+
+              <div class="dropdown-menu dropdown-menu-end shadow p-0" aria-labelledby="notifDropdown" style="min-width: 360px; max-height: 60vh; overflow:auto;">
+                <div id="notifList" class="list-group list-group-flush">
+                  <div class="p-3 text-muted small" id="notifEmpty">No notifications</div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center p-2 border-top">
+                  <!-- <button class="btn btn-sm btn-outline-secondary" type="button" onclick="refreshNotifs()">Refresh</button> -->
+                  <button class="btn btn-sm btn-outline-primary" type="button" onclick="markAllNotifsRead()">Mark all read</button>
+                </div>
+              </div>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                   <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center me-2" style="width:30px; height:30px;">
@@ -138,24 +157,112 @@
   border-radius: .5rem;
   transition: background .2s;
 }
-
-    
+#notifDropdown .fa-bell {
+  font-size: 1.3rem; /* adjust size */
+}
+#notifBadge {
+  font-size: 0.75rem; /* keep badge text compact */
+}
+#notifList .list-group-item:hover{ background:#f8f9fa; }
+#notifBadge.d-none{ display:none!important; }   
     /* Subtle “success” pill for role (keep BS 5.3 naming style) */
     .bg-success-subtle{ background-color: #d1f2e3 !important; }
     .text-success-emphasis{ color:#0a7a55 !important; }
     .border-success-subtle{ border-color:#a7e3c9 !important; }
     </style>
+
+
 <script>
-    (function () {
-      const path = location.pathname;
-      document.querySelectorAll('.navbar .nav-link').forEach(a => {
-        const href = a.getAttribute('href');
-        if (!href) return;
-        // exact or section match
-        if (href === path || (href !== '/' && path.startsWith(href))) {
-          a.classList.add('active');
-        }
-      });
-    })();
-  </script>
-      
+ function fmtTsMsToTZ(ms, opts){
+  try{
+    const d = new Date(ms);
+    return new Intl.DateTimeFormat(undefined, Object.assign({
+      timeZone: window.APP_TZ || 'Asia/Yangon',
+      year: "numeric",
+      month: "short",    // → "Sep"
+      day: "2-digit",    // → "08"
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true 
+    }, opts || {})).format(d);
+  }catch(e){ return ""; }
+}
+async function fetchJSON(url, opts){ const r = await fetch(url, opts||{}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+async function updateNotifBadge(){
+  try{
+    const { unread } = await fetchJSON('/notifications/unread_count');
+    const b = document.getElementById('notifBadge');
+    if (!b) return;
+    if (unread > 0){
+      b.textContent = unread > 99 ? '99+' : unread;
+      b.classList.remove('d-none');
+    } else {
+      b.classList.add('d-none');
+    }
+  }catch(e){ /* noop */ }
+}
+
+async function loadNotifs(){
+  const listEl = document.getElementById('notifList');
+  const emptyEl = document.getElementById('notifEmpty');
+  if (!listEl) return;
+  try{
+    const { items } = await fetchJSON('/notifications/list?limit=20');
+    listEl.innerHTML = '';
+    if (!items || items.length === 0){
+      listEl.appendChild(emptyEl || Object.assign(document.createElement('div'), {className: 'p-3 text-muted small', textContent: 'No notifications'}));
+      return;
+    }
+    items.forEach(n => {
+      const a = document.createElement('a');
+      a.className = 'list-group-item list-group-item-action';
+      a.href = n.order_id ? (`/${window.currentUserRole || 'buyer'}/orders/${n.order_id}`) : '#';
+      a.innerHTML = `
+  <div class="d-flex justify-content-between">
+    <strong class="${n.is_read ? 'text-muted' : ''}">${n.title || n.type}</strong>
+    <span class="small text-muted">${fmtTsMsToTZ(n.created_at_ms)}</span>
+  </div>
+  <div class="small ${n.is_read ? 'text-muted' : ''}">${n.message || ''}</div>
+`;
+
+      listEl.appendChild(a);
+    });
+  }catch(e){
+    listEl.innerHTML = `<div class="p-3 text-danger small">Failed to load notifications</div>`;
+  }
+}
+
+async function markAllNotifsRead(){
+  try{
+    await fetchJSON('/notifications/mark_read', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ ids: null }) });
+    updateNotifBadge();
+    // optimistically gray out items
+    document.querySelectorAll('#notifList .list-group-item strong').forEach(el => el.classList.add('text-muted'));
+    document.querySelectorAll('#notifList .list-group-item .small').forEach(el => el.classList.add('text-muted'));
+  }catch(e){}
+}
+
+async function refreshNotifs(){ await loadNotifs(); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // expose role for link building; you already have current_user in templates
+  window.currentUserRole = "{{ (current_user.role if current_user else '') or '' }}";
+
+  // initial badge
+  updateNotifBadge();
+
+  // load list when dropdown opens; then mark as read automatically
+  const dd = document.getElementById('notifDropdown');
+  if (dd){
+    dd.addEventListener('show.bs.dropdown', async () => {
+      await loadNotifs();
+      // Mark all read once opened
+      await markAllNotifsRead();
+    });
+  }
+
+  // (Optional) Poll badge every 60s
+  setInterval(updateNotifBadge, 60000);
+});
+</script>

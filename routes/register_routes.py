@@ -1,4 +1,23 @@
 from fastapi import APIRouter, Request, Form
+
+# geocode_address for latitude and longitude
+import requests
+def geocode_address(address):
+    """Geocode an address using OpenStreetMap Nominatim API."""
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": address,
+        "format": "json",
+        "limit": 1
+    }
+    try:
+        response = requests.get(url, params=params, headers={"User-Agent": "MedicineTracker/1.0"}, timeout=5)
+        data = response.json()
+        if data:
+            return float(data[0]['lat']), float(data[0]['lon'])
+    except Exception:
+        pass
+    return None, None
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request, Form, HTTPException, status
@@ -98,13 +117,16 @@ def register_seller(
     }
     user_result = db.users.insert_one(user_data)
 
+    # Geocode the address to get latitude and longitude
+    lat, lon = geocode_address(address)
     pharmacy_profile_data = {
         "user_id": str(user_result.inserted_id),
         "pharmacy_name": pharmacy_name,
         "license_number": license_number,
         "contact_info": contact_info,
         "address": address,
-        "coordinates": None,
+        "latitude": lat,     #latitude
+        "longitude": lon,    #longitude
         "operating_hours": operating_hours,
         "created_at": datetime.utcnow()
     }
