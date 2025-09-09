@@ -91,7 +91,7 @@
                   <th class="text-end">{{ order.formatted_total }}</th>
                 </tr>
                 <tr>
-                  <th colspan="3" class="text-end">Your Revenue</th>
+                  <th colspan="3" class="text-end">Your Profits</th>
                   <th class="text-end">{{ order.formatted_revenue_total }}</th>
                 </tr>
               </tfoot>
@@ -212,9 +212,7 @@
         <i class="fas fa-check me-1"></i> Sent
       </span>
     </div>
-    {% if order.payment.seller_receipt_sent_at %}
-      <div class="small text-muted ms-4">Sent at: {{ order.payment.seller_receipt_sent_at }}</div>
-    {% endif %}
+   
   {% endif %}
 {% endif %}
 
@@ -270,18 +268,273 @@
 </div>
 
 <style>
-.row.align-items-stretch > [class*="col-"] { display:flex; }  /* equal heights */
+/* =========================
+   THEME TOKENS
+   ========================= */
+   :root{
+  --ref-deep:#0e8a83;   /* deep teal */
+  --ref-teal:#16c2b3;   /* bright teal */
+  --ref-mint:#c8f3ea;   /* pale mint */
+  --ink:#0c1b1c;
+  --line:#e6efee;
+  --danger:#dc3545;
+}
+
+/* =========================
+   PAGE BACKGROUND (no min-height)
+   ========================= */
+html, body{
+  height:100%;
+  background: linear-gradient(180deg, var(--ref-mint) 0%, #ffffff 100%) !important;
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: inherit;
+}
+
+/* =========================
+   LAYOUT / CARDS
+   ========================= */
+.row.align-items-stretch > [class*="col-"] { display:flex; } /* equal heights */
 .break-any{word-break:break-word;overflow-wrap:anywhere;}
-.action-row{padding:.25rem 0;border-bottom:1px dashed #e9ecef;}
+
+.card.border-0.shadow-sm{
+  border:1px solid rgba(14,138,131,.10)!important;
+  border-radius:14px!important;
+  background:#ffffffcc!important;
+  backdrop-filter:saturate(120%) blur(2px);
+  transition: box-shadow .14s ease, border-color .14s ease;
+}
+.card.border-0.shadow-sm:hover{
+  box-shadow:0 10px 22px rgba(12,27,28,.08);
+  border-color:rgba(14,138,131,.20);
+}
+
+/* Small, clean transitions; no “lift” motion */
+a, .btn, .card, .form-control, .dropdown-menu, .badge{
+  transition: background-color .14s ease, color .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+
+/* =========================
+   BADGES (status/payment) — pill, transparent, on-brand
+   ========================= */
+/* =========================
+   REMOVE GREEN → USE BRAND TEAL (#0e8a83)
+   ========================= */
+
+/* Success buttons */
+.btn-success,
+.btn-success:focus,
+.btn-success:active {
+  background: #0e8a83 !important;
+  border: 0 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 6px 14px rgba(14,138,131,.18) !important;
+}
+.btn-success:hover {
+  background: #16c2b3 !important; /* lighter teal on hover */
+}
+
+/* Outline success buttons */
+.btn-outline-success {
+  --bs-btn-color: #0e8a83 !important;
+  --bs-btn-border-color: #0e8a83 !important;
+  --bs-btn-hover-bg: rgba(14,138,131,.08) !important;
+  --bs-btn-hover-border-color: #16c2b3 !important;
+  color: #0e8a83;
+  border: 1px solid #0e8a83 !important;
+}
+
+/* Success badges → teal pills */
+.badge.bg-success,
+.badge.text-bg-success {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  padding: .38rem .7rem !important;
+  border: 1px solid rgba(14,138,131,.45) !important;
+  background: rgba(14,138,131,.10) !important;
+  color: #0e8a83 !important;
+  font-family: inherit !important;
+}
+
+/* Success text utilities */
+.text-success {
+  color: #0e8a83 !important;
+}
+
+/* =========================
+   TABLE (items + totals)
+   ========================= */
+.table thead th{
+  background:#e9f8f5 !important;
+  color:var(--ref-deep) !important;
+  border-bottom:1px solid var(--line) !important;
+  font-weight:800;
+  font-family: inherit;
+}
+
+/* Tfoot rows: make labels bold & numeric cell a right-aligned chip */
+.table tfoot th{
+  background:#f6fbfa !important;
+  border-top:1px solid #e6efee !important;
+  font-weight:700;
+  color:#0b3f3b;
+  font-family: inherit;
+}
+
+/* Keep the *last* tfoot cell tight, numeric, and on-brand */
+.table tfoot tr th:last-child{
+  text-align:right;
+  white-space:nowrap;
+  width:1%;                /* avoid stretching */
+  font-variant-numeric: tabular-nums;
+  letter-spacing:.1px;
+
+  /* Chip look applied to the cell itself (safe, no HTML change) */
+  background:#eef9f7 !important;
+  border:1px dashed rgba(14,138,131,.22) !important;
+  color:#0e8a83 !important;
+  font-weight:800 !important;
+  border-radius:.75rem;
+  padding:.40rem .70rem !important;
+}
+
+/* If you want the label cell bolder on the left of totals: */
+.table tfoot tr th.text-end:not(:last-child){
+  font-weight:800;
+  color:#0b3f3b;
+}
+
+/* =========================
+   RIGHT CARD: ACTIONS
+   ========================= */
+.action-row{padding:.4rem 0;border-bottom:1px dashed var(--line);}
 .action-row:last-of-type{border-bottom:0;}
+
+/* Buttons – global brand mapping (so they match across pages) */
+.btn{
+  border-radius:.8rem;
+  font-weight:700;
+  font-family: inherit;
+}
+
+/* Global primary & success to ensure override (also covers “Apply”) */
+.btn-primary{
+  background:linear-gradient(90deg, var(--ref-deep), var(--ref-teal)) !important;
+  border:0 !important;
+  color:#fff !important;
+  box-shadow:0 8px 18px rgba(14,138,131,.18) !important;
+}
+.btn-primary:hover{ filter:saturate(1.05) brightness(1.03); }
+
+.btn-success{
+  background:linear-gradient(90deg, var(--ref-deep), var(--ref-teal)) !important;
+  border:0 !important;
+  color:#fff !important;
+  box-shadow:0 8px 18px rgba(14,138,131,.18) !important;
+}
+.btn-success:hover{ filter:saturate(1.05) brightness(1.03); }
+
+/* On-brand outlines */
+.btn-outline-secondary{
+  --bs-btn-color:var(--ref-deep);
+  --bs-btn-border-color:rgba(14,138,131,.35);
+  --bs-btn-hover-bg:#ecfffb;
+  --bs-btn-hover-border-color:var(--ref-teal);
+}
+.btn-outline-primary{
+  --bs-btn-color:var(--ref-deep);
+  --bs-btn-border-color:rgba(14,138,131,.45);
+  --bs-btn-hover-bg:#ecfffb;
+  --bs-btn-hover-border-color:var(--ref-teal);
+}
+.btn-outline-success{
+    color:#0e8a83;
+    background:#eaf7f2;
+   
+}
+.btn-outline-success:hover{
+    color:#eaf7f2;
+    background:#0e8a83;
+    box-shadow:0 8px 18px rgba(14,138,131,.18);
+}
+.btn-danger{
+  background:#e74c3c !important;
+  border-color:#e74c3c !important;
+  color:#fff !important;
+}
+.btn-danger:hover{ background:#cf4134 !important; border-color:#cf4134 !important; }
+
+/* Make small utility buttons tidy */
+#actions .btn-sm{ border-radius:.6rem; font-weight:600; }
+
+/* Small meta code block in payment info */
+.small.text-muted code{
+  background:#f6fbfa; border:1px solid var(--line);
+  padding:.05rem .35rem; border-radius:.35rem;
+  color:#0b3f3b;
+}
+/* Badges */
+.badge.bg-success,
+.badge.text-bg-success {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  padding: .38rem .7rem !important;
+  border: 1px solid rgba(22,194,179,.45) !important;
+  background: rgba(22,194,179,.10) !important;
+  color: var(--ref-deep) !important;
+  font-family: inherit !important;
+}
+/* =========================
+   STEPPER (theme colors)
+   ========================= */
 .order-stepper{display:flex;justify-content:space-between;list-style:none;padding:0;margin:0;position:relative}
 .order-stepper .step{flex:1 1 0;text-align:center;position:relative;padding:0 .25rem}
 .order-stepper .step:not(:last-child)::after{content:"";position:absolute;left:50%;right:-50%;top:18px;height:4px;background:#e9ecef;z-index:1}
 .order-stepper .dot{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#e9ecef;color:#6c757d;z-index:2;position:relative;box-shadow:0 0 0 2px #fff inset}
 .order-stepper .step span{display:block;margin-top:.5rem;font-size:.95rem;color:#6c757d}
-.order-stepper .is-done .dot{background:#198754;color:#fff}
-.order-stepper .step.is-done::after{background:#198754}
-.order-stepper .is-current .dot{box-shadow:0 0 0 4px rgba(25,135,84,.25)}
+.order-stepper .is-done .dot{ background:var(--ref-deep); color:#fff; }
+.order-stepper .step.is-done::after{ background:var(--ref-deep); }
+.order-stepper .is-current .dot{ box-shadow:0 0 0 4px rgba(14,138,131,.25) }
 @media (max-width:576px){.order-stepper .step span{font-size:.85rem}}
+/* =========================
+   FORCE SUCCESS VARIANTS TO BRAND TEAL
+   ========================= */
+
+/* Buttons */
+.btn-success,
+.btn-success:focus,
+.btn-success:active {
+  background:linear-gradient(90deg, var(--ref-deep), var(--ref-teal)) !important;
+  border:0 !important;
+  color:#fff !important;
+  box-shadow:0 8px 18px rgba(14,138,131,.18) !important;
+}
+.btn-success:hover {
+  filter:saturate(1.05) brightness(1.03);
+}
+
+/* Outline success */
+.btn-outline-success {
+  --bs-btn-color: var(--ref-deep);
+  --bs-btn-border-color: rgba(14,138,131,.45);
+  --bs-btn-hover-bg: #ecfffb;
+  --bs-btn-hover-border-color: var(--ref-teal);
+  /* color: var(--ref-deep) !important; */
+  border: 1px solid rgba(14,138,131,.45) !important;
+}
+
+/* Badges */
+.badge.bg-success,
+.badge.text-bg-success {
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+  padding: .38rem .7rem !important;
+  border: 1px solid rgba(22,194,179,.45) !important;
+  background: rgba(22,194,179,.10) !important;
+  color: var(--ref-deep) !important;
+  font-family: inherit !important;
+}
+
 </style>
 {% endblock %}
