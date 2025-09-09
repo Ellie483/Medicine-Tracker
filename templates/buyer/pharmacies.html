@@ -33,13 +33,14 @@
                         </div>
                         <div class="col-md-3">
                             <select id="sortBy" class="form-select">
+                                <option value="distance" selected>Sort by Nearest</option>
                                 <option value="name">Sort by Name</option>
                                 <option value="medicines">Sort by Medicine Count</option>
                                 <option value="address">Sort by Address</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <button type="button" onclick="clearSearch()" class="btn btn-outline-secondary w-100">
+                            <button type="button" id="clearBtn" class="btn btn-outline-secondary w-100">
                                 <i class="fas fa-times me-1"></i>Clear
                             </button>
                         </div>
@@ -56,7 +57,8 @@
         <div class="col-lg-6 col-xl-4 mb-4 pharmacy-card" 
              data-name="{{ pharmacy.pharmacy_name.lower() }}" 
              data-address="{{ pharmacy.address.lower() }}"
-             data-medicines="{{ pharmacy.medicine_count }}">
+             data-medicines="{{ pharmacy.medicine_count }}"
+             data-distance="{{ pharmacy.distance if pharmacy.distance is not none else '' }}">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
@@ -102,8 +104,8 @@
                             </div>
                         </div>
                         <div class="col-4">
-                            {% if pharmacy.distance is defined and pharmacy.distance != float('inf') %}
-                                <div class="fw-bold text-info">{{ '%.2f'|format(pharmacy.distance) }} km</div>
+                            {% if pharmacy.distance is defined and pharmacy.distance is not none and pharmacy.distance != float('inf') %}
+                                <div class="fw-bold text-info">{{ '%.2f'|format(pharmacy.distance) }} km from you</div>
                             {% else %}
                                 <div class="fw-bold text-info">N/A</div>
                             {% endif %}
@@ -133,18 +135,6 @@
             </div>
         </div>
         {% endfor %}
-    </div>
-
-    {% else %}
-    <!-- Empty State -->
-    <div class="row">
-        <div class="col-12">
-            <div class="text-center py-5">
-                <i class="fas fa-store fa-4x text-muted mb-4"></i>
-                <h3 class="text-muted mb-3">No pharmacies found</h3>
-                <p class="text-muted mb-4">No pharmacies are currently registered in the system</p>
-            </div>
-        </div>
     </div>
     {% endif %}
 
@@ -216,88 +206,54 @@
 </div>
 
 <script>
-
-// Search and filter functionality (with location)
-let userLat = null, userLon = null;
-
 function filterPharmacies() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    // If user location is set, fetch sorted pharmacies from backend
-    if (userLat !== null && userLon !== null) {
-        fetch(`/buyer/pharmacies?lat=${userLat}&lon=${userLon}&q=${encodeURIComponent(searchTerm)}`)
-            .then(res => res.text())
-            .then(html => {
-                // Replace the whole body content with new sorted pharmacies
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newContainer = doc.querySelector('.container-fluid');
-                document.querySelector('.container-fluid').innerHTML = newContainer.innerHTML;
-            });
-        return;
-    }
-    // Fallback: local search
-    const pharmacyCards = document.querySelectorAll('.pharmacy-card');
-    let visibleCount = 0;
-    pharmacyCards.forEach(card => {
+    const term = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.pharmacy-card');
+    let anyVisible = false;
+    cards.forEach(card => {
         const name = card.dataset.name;
         const address = card.dataset.address;
-        const matchesSearch = !searchTerm || name.includes(searchTerm) || address.includes(searchTerm);
-        if (matchesSearch) {
+        if (name.includes(term) || address.includes(term)) {
             card.style.display = 'block';
-            visibleCount++;
+            anyVisible = true;
         } else {
             card.style.display = 'none';
         }
     });
-    document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
+    document.getElementById('noResults').style.display = anyVisible ? 'none' : 'block';
 }
-
-// Get user location
-// Removed location button and its event listener
 
 function sortPharmacies() {
     const sortBy = document.getElementById('sortBy').value;
     const container = document.getElementById('pharmaciesContainer');
-    const cards = Array.from(container.children);
-    
+    const cards = Array.from(container.children).filter(c => c.style.display !== 'none');
     cards.sort((a, b) => {
         let aValue, bValue;
-        
         switch(sortBy) {
-            case 'name':
-                aValue = a.dataset.name;
-                bValue = b.dataset.name;
-                break;
-            case 'medicines':
-                aValue = parseInt(a.dataset.medicines);
-                bValue = parseInt(b.dataset.medicines);
-                return bValue - aValue; // Descending order for medicines
-            case 'address':
-                aValue = a.dataset.address;
-                bValue = b.dataset.address;
-                break;
-            default:
-                return 0;
+            case 'name': 
+                aValue = a.dataset.name; bValue = b.dataset.name; break;
+            case 'medicines': 
+                return parseInt(b.dataset.medicines) - parseInt(a.dataset.medicines);
+            case 'address': 
+                aValue = a.dataset.address; bValue = b.dataset.address; break;
+            case 'distance':
+                aValue = parseFloat(a.dataset.distance) || Infinity;
+                bValue = parseFloat(b.dataset.distance) || Infinity;
+                return aValue - bValue;
+            default: return 0;
         }
-        
         return aValue.localeCompare(bValue);
     });
-    
-    cards.forEach(card => container.appendChild(card));
+    cards.forEach(c => container.appendChild(c));
 }
 
 function clearSearch() {
     document.getElementById('searchInput').value = '';
-    document.getElementById('sortBy').value = 'name';
     filterPharmacies();
+    document.getElementById('sortBy').value = 'distance';
     sortPharmacies();
 }
 
-// Event listeners
-document.getElementById('searchInput').addEventListener('input', filterPharmacies);
-document.getElementById('sortBy').addEventListener('change', sortPharmacies);
-
-// Modal functions
 function showContact(name, contact, address) {
     document.getElementById('modalPharmacyName').textContent = name;
     document.getElementById('modalContact').textContent = contact;
@@ -314,7 +270,6 @@ async function viewMedicines(pharmacyId, pharmacyName) {
     document.getElementById('medicinesPharmacyName').textContent = pharmacyName;
     const modal = new bootstrap.Modal(document.getElementById('medicinesModal'));
     modal.show();
-    
     try {
         const response = await fetch(`/api/pharmacy/${pharmacyId}/medicines`);
         if (response.ok) {
@@ -330,22 +285,20 @@ async function viewMedicines(pharmacyId, pharmacyName) {
 
 function displayMedicines(medicines) {
     const container = document.getElementById('medicinesList');
-    
     if (medicines.length === 0) {
         container.innerHTML = '<p class="text-muted text-center">No medicines available</p>';
         return;
     }
-    
     let html = '<div class="row">';
-    medicines.forEach(medicine => {
+    medicines.forEach(med => {
         html += `
             <div class="col-md-6 mb-3">
                 <div class="card border-0 bg-light">
                     <div class="card-body p-3">
-                        <h6 class="card-title mb-1">${medicine.name}</h6>
+                        <h6 class="card-title mb-1">${med.name}</h6>
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-primary fw-bold">${medicine.price.toFixed(2)}Ks</span>
-                            <span class="text-muted small">Stock: ${medicine.stock}</span>
+                            <span class="text-primary fw-bold">${med.price.toFixed(2)} Ks</span>
+                            <span class="text-muted small">Stock: ${med.stock}</span>
                         </div>
                     </div>
                 </div>
@@ -353,35 +306,27 @@ function displayMedicines(medicines) {
         `;
     });
     html += '</div>';
-    
     container.innerHTML = html;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('searchInput').addEventListener('input', filterPharmacies);
+    document.getElementById('searchBtn').addEventListener('click', filterPharmacies);
+    document.getElementById('clearBtn').addEventListener('click', clearSearch);
+    document.getElementById('sortBy').addEventListener('change', sortPharmacies);
+
+    // Initial sort by distance on page load
+    sortPharmacies();
+});
 </script>
 
 <style>
-.pharmacy-card {
-    transition: transform 0.2s ease-in-out;
-}
-
-.pharmacy-card:hover {
-    transform: translateY(-2px);
-}
-
-.card {
-    border-radius: 10px;
-}
-
-.border-end {
-    border-right: 1px solid #dee2e6 !important;
-}
-
+.pharmacy-card { transition: transform 0.2s ease-in-out; }
+.pharmacy-card:hover { transform: translateY(-2px); }
+.card { border-radius: 10px; }
+.border-end { border-right: 1px solid #dee2e6 !important; }
 @media (max-width: 576px) {
-    .border-end {
-        border-right: none !important;
-        border-bottom: 1px solid #dee2e6 !important;
-        padding-bottom: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
+    .border-end { border-right: none !important; border-bottom: 1px solid #dee2e6 !important; padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
 }
 </style>
 {% endblock %}

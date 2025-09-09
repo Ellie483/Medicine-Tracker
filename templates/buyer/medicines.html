@@ -8,13 +8,13 @@
 .search-wrapper {
     display: flex;
     align-items: center;
-    justify-content: flex-end;  /* Align search box to the right */
+    justify-content: flex-end;  
     background: #fff;
     border-radius: 50px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     border: 2px solid var(--primary-color);
-    max-width: 800px;  /* Adjust width */
+    max-width: 800px;  
     padding-right: 5px;
     transition: box-shadow 0.3s ease;
 }
@@ -38,7 +38,7 @@
 }
 
 #search-icon {
-    background-color: transparent; /* Button stays transparent */
+    background-color: transparent;
     border: none;
     cursor: pointer;
     display: flex;
@@ -50,15 +50,14 @@
 
 #search-icon i {
     font-size: 20px;
-    color: #0d6efd; /* Icon is blue */
+    color: #0d6efd;
     transition: transform 0.2s ease, color 0.2s ease;
 }
 
 #search-icon:hover i {
-    transform: scale(1.2); /* Slight zoom effect */
-    color: #0b5ed7; /* Darker blue on hover */
+    transform: scale(1.2);
+    color: #0b5ed7;
 }
-
 </style>
 {% endblock %}
 
@@ -69,24 +68,20 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <!-- Left side content: Title and description -->
                 <div>
                     <h2 class="mb-1"><i class="fas fa-pills me-2 text-primary"></i>Browse Medicines</h2>
                     <p class="text-muted mb-0">Find and order medicines from nearby pharmacies</p>
-                    <!-- Add search box under the subtitle -->
-<div class="mt-3">
-    <div class="input-group">
-        <input type="text" id="medicineSearch" class="form-control" placeholder="Search medicines by name, pharmacy, or description...">
-    <button class="btn btn-primary" type="button" id="searchButton">
-            <i class="fas fa-search"></i>
-        </button>
-    </div>
-</div>
+                    <div class="mt-3">
+                        <div class="input-group">
+                            <input type="text" id="medicineSearch" class="form-control" placeholder="Search medicines by name, pharmacy, or description...">
+                            <button class="btn btn-primary" type="button" id="searchButton">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Right side content: Search Box -->
                 <div class="d-flex align-items-center">
-                    <!-- Search Box -->
                     <div class="search-wrapper mt-3">
                         <input type="text" id="searchBox" class="search-input" placeholder="Search medicines..." onkeyup="searchMedicines()">
                         <button class="search-btn" id="search-icon" aria-label="Search">
@@ -94,167 +89,126 @@
                         </button>
                     </div>
 
-                    <!-- Available Badge -->
                     <span class="badge bg-info fs-6 ms-3">{{ medicines|length if medicines else 0 }} Available</span>
                 </div>
             </div>
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- Medicines Grid -->
     <div class="row" id="medicinesContainer">
         {% for medicine in medicines %}
-        <div class="col-lg-4 col-md-6 mb-4 medicine-card" 
-             data-name="{{ medicine.name.lower() }}" 
-             data-pharmacy="{{ medicine.pharmacy_name }}" 
-             data-price="{{ medicine.price }}"
-             data-description="{{ medicine.description.lower() }}">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h5 class="card-title mb-0">{{ medicine.name }}</h5>
-                        <span class="badge bg-success">Available</span>  <!-- The 'Available' badge -->
-                    </div>
-                    
-                    <div class="mb-3">
-                        <p class="text-muted small mb-2">{{ medicine.description or 'No description available' }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-primary fw-bold fs-5">{{ medicine.formatted_price }}</span>
-                            <span class="text-muted small">Stock: {{ medicine.stock }}</span>
+            {% set available = (medicine.stock or 0)|int %}
+            {% set low = available > 0 and available <= 5 %}
+            <div class="col-lg-4 col-md-6 mb-4 medicine-card"
+                 data-name="{{ (medicine.name or '')|lower }}"
+                 data-pharmacy="{{ medicine.pharmacy_name }}"
+                 data-price="{{ medicine.price }}"
+                 data-description="{{ medicine.description.lower() }}">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0">{{ medicine.name }}</h5>
+                            <span class="badge bg-success">Available</span>
                         </div>
-=======
-```
-<!-- Medicines Grid -->
-<div class="row" id="medicinesContainer">
-  {% for medicine in medicines %}
-    {% set available = (medicine.available or 0)|int %}
-    {% set low = available > 0 and available <= 5 %}
-    <div class="col-lg-4 col-md-6 mb-4 medicine-card"
-         data-name="{{ (medicine.name or '')|lower }}"
-         data-pharmacy="{{ medicine.pharmacy_name }}"
-         data-price="{{ medicine.price }}"
-         data-description="{{ medicine.description.lower() }}">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="card-title mb-0">{{ medicine.name }}</h5>
-                    <span class="badge bg-success">Available</span>
-                </div>
-               
-                <div class="mb-3">
-                    <p class="text-muted small mb-2">{{ medicine.description or 'No description available' }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-primary fw-bold fs-5">{{ medicine.formatted_price }}</span>
-                        <span class="text-muted small">Stock: {{ medicine.stock }}</span>
->>>>>>> origin/main
+
+                        <div class="mb-3">
+                            <p class="text-muted small mb-2">{{ medicine.description or 'No description available' }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-primary fw-bold fs-5">{{ medicine.formatted_price }}</span>
+                                <span class="text-muted small">Stock: {{ medicine.stock }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center text-muted small">
+                                <i class="fas fa-store me-2"></i>
+                                <span>{{ medicine.pharmacy_name }}</span>
+                            </div>
+                            <div class="d-flex align-items-center text-muted small mt-1">
+                                <i class="fas fa-calendar me-2"></i>
+                                <span>Expires: {{ medicine.expiration_date or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button
+                              id="btn-add-{{ medicine._id }}"
+                              class="btn btn-primary btn-sm"
+                              onclick="addToCart('{{ medicine._id }}')"
+                              {% if available <= 0 %}disabled{% endif %}
+                            >
+                              <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                            </button>
+
+                            <div id="hint-{{ medicine._id }}">
+                              {% if available <= 0 %}
+                                <div class="small text-danger mt-2"><i class="fas fa-circle-exclamation me-1"></i>Out of stock</div>
+                              {% elif low %}
+                                <div class="small text-warning mt-2"><i class="fas fa-triangle-exclamation me-1"></i>Only {{ available }} left</div>
+                              {% endif %}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-
-          <div class="mb-3">
-            <div class="d-flex align-items-center text-muted small">
-              <i class="fas fa-store me-2"></i>
-              <span>{{ medicine.pharmacy_name }}</span>
             </div>
-            <div class="d-flex align-items-center text-muted small mt-1">
-              <i class="fas fa-calendar me-2"></i>
-              <span>Expires: {{ medicine.expiration_date or '—' }}</span>
-            </div>
-          </div>
-
-          <div class="d-grid">
-            <button
-              id="btn-add-{{ medicine._id }}"
-              class="btn btn-primary btn-sm"
-              onclick="addToCart('{{ medicine._id }}')"
-              {% if available <= 0 %}disabled{% endif %}
-            >
-              <i class="fas fa-cart-plus me-1"></i>Add to Cart
-            </button>
-
-            <div id="hint-{{ medicine._id }}">
-              {% if available <= 0 %}
-                <div class="small text-danger mt-2"><i class="fas fa-circle-exclamation me-1"></i>Out of stock</div>
-              {% elif low %}
-                <div class="small text-warning mt-2"><i class="fas fa-triangle-exclamation me-1"></i>Only {{ available }} left</div>
-              {% endif %}
-            </div>
-          </div>
-
-        </div>
-      </div>
+        {% endfor %}
     </div>
-  {% endfor %}
-</div>
 
-
-
-
-
-<!-- No Results Message -->
-<div id="noResults" class="text-center py-5" style="display: none;">
-    <i class="fas fa-search fa-3x text-muted mb-3"></i>
-    <h4 class="text-muted">No medicines found</h4>
-    <p class="text-muted">Try adjusting your search criteria</p>
-</div>
-```
-
+    <!-- No Results Message -->
+    <div id="noResults" class="text-center py-5" style="display: none;">
+        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No medicines found</h4>
+        <p class="text-muted">Try adjusting your search criteria</p>
+    </div>
 </div>
 
 <script>
-  async function addToCart(medicineId){
+async function addToCart(medicineId){
     const formData = new FormData();
     formData.append("medicine_id", medicineId);
     formData.append("quantity", 1);
-  
+
     try{
-      const res = await fetch('/buyer/add_to_cart', { method:'POST', body: formData });
-      let data = null;
-      try { data = await res.json(); } catch {}
-      const code = data && (data.detail || data.message);
-  
-      if (!res.ok){
-        if (res.status === 409 || /out_of_stock/i.test(code || '')) {
-          showCenterNotice('Sorry, this item is out of stock.');
-        } else {
-          showCenterNotice(code || 'Failed to add to cart');
+        const res = await fetch('/buyer/add_to_cart', { method:'POST', body: formData });
+        let data = null;
+        try { data = await res.json(); } catch {}
+        const code = data && (data.detail || data.message);
+
+        if (!res.ok){
+            if (res.status === 409 || /out_of_stock/i.test(code || '')) {
+                showCenterNotice('Sorry, this item is out of stock.');
+            } else {
+                showCenterNotice(code || 'Failed to add to cart');
+            }
+            return;
         }
-        return;
-      }
-  
-      // show confirmation
-      showCenterNotice((data && data.message) || 'Added to cart.');
-  
-      // If backend returns availability, update UI with that source of truth
-      if (data && typeof data.available_after === 'number'){
-        const avail = data.available_after;
-        const stockEl = document.getElementById(`stock-${medicineId}`);
-        const btnEl   = document.getElementById(`btn-add-${medicineId}`);
-        const hintEl  = document.getElementById(`hint-${medicineId}`);
-        if (stockEl){
-          stockEl.dataset.available = String(avail);
-          stockEl.textContent = `Available: ${avail}`;
+
+        showCenterNotice((data && data.message) || 'Added to cart.');
+
+        if (data && typeof data.available_after === 'number'){
+            const avail = data.available_after;
+            const btnEl   = document.getElementById(`btn-add-${medicineId}`);
+            const hintEl  = document.getElementById(`hint-${medicineId}`);
+            if (btnEl){
+                btnEl.disabled = avail <= 0;
+            }
+            if (hintEl){
+                if (avail <= 0){
+                    hintEl.innerHTML = '<div class="small text-danger mt-2"><i class="fas fa-circle-exclamation me-1"></i>Out of stock</div>';
+                } else if (avail <= 5){
+                    hintEl.innerHTML = `<div class="small text-warning mt-2"><i class="fas fa-triangle-exclamation me-1"></i>Only ${avail} left</div>`;
+                } else {
+                    hintEl.innerHTML = '';
+                }
+            }
         }
-        if (btnEl){
-          btnEl.disabled = avail <= 0;
-        }
-        if (hintEl){
-          if (avail <= 0){
-            hintEl.innerHTML = '<div class="small text-danger mt-2"><i class="fas fa-circle-exclamation me-1"></i>Out of stock</div>';
-          } else if (avail <= 5){
-            hintEl.innerHTML = `<div class="small text-warning mt-2"><i class="fas fa-triangle-exclamation me-1"></i>Only ${avail} left</div>`;
-          } else {
-            hintEl.innerHTML = '';
-          }
-        }
-      }
     } catch (err){
-      console.error(err);
-      showCenterNotice('Network error while adding to cart.');
+        console.error(err);
+        showCenterNotice('Network error while adding to cart.');
     }
-  }
-  </script>
-  
+}
+</script>
 
 {% endblock %}
-
