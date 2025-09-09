@@ -25,8 +25,11 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-6 d-flex gap-2">
                             <input type="text" id="searchInput" class="form-control" placeholder="Search pharmacies by name or address...">
+                            <button type="button" id="searchBtn" class="btn btn-secondary" title="Search">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </div>
                         <div class="col-md-3">
                             <select id="sortBy" class="form-select">
@@ -99,7 +102,11 @@
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="fw-bold text-info">2.1 km</div>
+                            {% if pharmacy.distance is defined and pharmacy.distance != float('inf') %}
+                                <div class="fw-bold text-info">{{ '%.2f'|format(pharmacy.distance) }} km</div>
+                            {% else %}
+                                <div class="fw-bold text-info">N/A</div>
+                            {% endif %}
                             <small class="text-muted">Distance</small>
                         </div>
                     </div>
@@ -209,18 +216,32 @@
 </div>
 
 <script>
-// Search and filter functionality
+
+// Search and filter functionality (with location)
+let userLat = null, userLon = null;
+
 function filterPharmacies() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    // If user location is set, fetch sorted pharmacies from backend
+    if (userLat !== null && userLon !== null) {
+        fetch(`/buyer/pharmacies?lat=${userLat}&lon=${userLon}&q=${encodeURIComponent(searchTerm)}`)
+            .then(res => res.text())
+            .then(html => {
+                // Replace the whole body content with new sorted pharmacies
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContainer = doc.querySelector('.container-fluid');
+                document.querySelector('.container-fluid').innerHTML = newContainer.innerHTML;
+            });
+        return;
+    }
+    // Fallback: local search
     const pharmacyCards = document.querySelectorAll('.pharmacy-card');
     let visibleCount = 0;
-    
     pharmacyCards.forEach(card => {
         const name = card.dataset.name;
         const address = card.dataset.address;
-        
         const matchesSearch = !searchTerm || name.includes(searchTerm) || address.includes(searchTerm);
-        
         if (matchesSearch) {
             card.style.display = 'block';
             visibleCount++;
@@ -228,9 +249,11 @@ function filterPharmacies() {
             card.style.display = 'none';
         }
     });
-    
     document.getElementById('noResults').style.display = visibleCount === 0 ? 'block' : 'none';
 }
+
+// Get user location
+// Removed location button and its event listener
 
 function sortPharmacies() {
     const sortBy = document.getElementById('sortBy').value;

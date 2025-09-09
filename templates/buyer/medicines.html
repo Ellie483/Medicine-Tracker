@@ -6,19 +6,28 @@
 
 <div class="container-fluid">
     <!-- Header -->
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
-        <h2 class="mb-1"><i class="fas fa-pills me-2 text-primary"></i>Browse Medicines</h2>
-        <p class="text-muted mb-0">Find and order medicines from nearby pharmacies</p>
-      </div>
-      <div>
-        <span class="badge bg-info fs-6">{{ available_count }} Available</span>
-      </div>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-pills me-2 text-primary"></i>Browse Medicines</h2>
+                    <p class="text-muted mb-0">Find and order medicines from nearby pharmacies</p>
+                    <!-- Add search box under the subtitle -->
+<div class="mt-3">
+    <div class="input-group">
+        <input type="text" id="medicineSearch" class="form-control" placeholder="Search medicines by name, pharmacy, or description...">
+    <button class="btn btn-primary" type="button" id="searchButton">
+            <i class="fas fa-search"></i>
+        </button>
     </div>
-  </div>
 </div>
+                </div>
+                <div>
+                    <span class="badge bg-info fs-6">{{ medicines|length }} Available</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <div class="row" id="medicinesContainer">
   {% for medicine in medicines %}

@@ -58,3 +58,13 @@ def is_medicine_expired(expiration_date: datetime) -> bool:
 def is_low_stock(stock: int, threshold: int = 10) -> bool:
     """Check if medicine stock is low"""
     return stock <= threshold
+
+    # Equirectangular approximation: fast and accurate for short distances (local search)
+# Equirectangular approximation: fast and accurate for short distances (local search)
+def equirectangular_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Approximate distance between two coordinates in kilometers (for local search)"""
+    from math import radians, cos, sqrt
+    R = 6371  # Earth radius in kilometers
+    x = radians(lon2 - lon1) * cos(radians((lat1 + lat2) / 2))
+    y = radians(lat2 - lat1)
+    return sqrt(x*x + y*y) * R

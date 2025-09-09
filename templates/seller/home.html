@@ -13,7 +13,7 @@
                     <p class="text-muted mb-0">Manage your pharmacy and track your business</p>
                 </div>
                 <div class="text-end">
-                    <h5 class="text-muted mb-0">{{ current_user.pharmacy_name }}</h5>
+                    <h5 class="text-muted mb-0">{{ pharmacy_name }}</h5>
                     <small class="text-muted">Your Pharmacy</small>
                 </div>
             </div>
@@ -41,25 +41,10 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body text-center">
                     <div class="mb-3">
-                        <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
-                    </div>
-                    <h3 class="fw-bold text-warning">{{ low_stock_count }}</h3>
-                    <p class="text-muted mb-3">Low Stock Alerts</p>
-                    <a href="/seller/inventory" class="btn btn-outline-warning btn-sm">
-                        <i class="fas fa-eye me-1"></i>Check Stock
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
                         <i class="fas fa-shopping-cart fa-3x text-success"></i>
                     </div>
                     <h3 class="fw-bold text-success">{{ orders_received }}</h3>
-                    <p class="text-muted mb-3">Total Orders</p>
+                    <p class="text-muted mb-3">Paid Orders</p>
                     <a href="/seller/orders" class="btn btn-outline-success btn-sm">
                         <i class="fas fa-clipboard-list me-1"></i>View Orders
                     </a>
@@ -75,8 +60,23 @@
                     </div>
                     <h3 class="fw-bold text-info">{{ total_revenue }} Ks</h3>
                     <p class="text-muted mb-3">Total Revenue</p>
-                    <a href="/seller/orders" class="btn btn-outline-info btn-sm">
+                    <a href="#chart_section" class="btn btn-outline-info btn-sm">
                         <i class="fas fa-chart-bar me-1"></i>View Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-line fa-3x text-warning"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning">{{ total_profit }} Ks</h3>
+                    <p class="text-muted mb-3">Total Profit</p>
+                    <a href="#chart_section" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-analytics me-1"></i>View Analytics
                     </a>
                 </div>
             </div>
@@ -84,7 +84,7 @@
     </div>
 
     <!-- Charts Section -->
-    <div class="row mb-4">
+    <div class="row mb-4" id="chart_section">
         <!-- Pie Chart - Top Selling Medicines -->
         <div class="col-lg-6 mb-4">
             <div class="card border-0 shadow-sm h-100">
@@ -112,12 +112,12 @@
             </div>
         </div>
 
-        <!-- Line Chart - Sales Trend -->
+        <!-- Line Chart - Profit Trend -->
         <div class="col-lg-6 mb-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-chart-line me-2 text-success"></i>Sales Trend (Revenue)
+                        <i class="fas fa-chart-line me-2 text-success"></i>Revenue & Profit Trend
                     </h5>
                     <div class="row mt-3 g-2">
                         <div class="col-md-4">
@@ -127,7 +127,9 @@
                                 <option value="year">Yearly</option>
                             </select>
                         </div>
-                        <div class="col-md-6" id="monthSelector">
+                        
+                        <!-- Daily Month Selector -->
+                        <div class="col-md-6" id="dailySelector">
                             <div class="input-group input-group-sm">
                                 <button class="btn btn-outline-secondary" onclick="changeMonth(-1)">
                                     <i class="fas fa-chevron-left"></i>
@@ -138,6 +140,20 @@
                                 </button>
                             </div>
                         </div>
+                        
+                        <!-- Monthly Year Selector -->
+                        <div class="col-md-6" id="monthlySelector" style="display: none;">
+                            <div class="input-group input-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="changeYear(-1)">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <input type="text" id="currentYear" class="form-control text-center" readonly>
+                                <button class="btn btn-outline-secondary" onclick="changeYear(1)">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
                         <div class="col-md-2">
                             <button onclick="updateLineChart()" class="btn btn-success btn-sm w-100">
                                 <i class="fas fa-sync"></i>
@@ -153,12 +169,12 @@
     </div>
 
     <!-- Recent Activity -->
-    <div class="row">
+    <!-- <div class="row">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-history me-2 text-info"></i>Recent Orders
+                        <i class="fas fa-history me-2 text-info"></i>Recent Paid Orders
                     </h5>
                 </div>
                 <div class="card-body">
@@ -168,15 +184,16 @@
                                 <tr>
                                     <th>Order ID</th>
                                     <th>Medicine</th>
-                                    <th>Quantity</th>
-                                    <th>Amount</th>
+                                    <th>Qty</th>
+                                    <th>Revenue</th>
+                                    <th>Profit</th>
                                     <th>Status</th>
                                     <th>Date</th>
                                 </tr>
                             </thead>
                             <tbody id="recentOrders">
                                 <tr>
-                                    <td colspan="6" class="text-center">Loading recent orders...</td>
+                                    <td colspan="7" class="text-center">Loading recent orders...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -184,7 +201,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 </div>
 
 <!-- Include Chart.js -->
@@ -196,6 +213,7 @@ let pieChartInstance = null;
 let lineChartInstance = null;
 let dashboardData = null;
 let currentMonth = new Date();
+let currentYear = new Date().getFullYear();
 let currentTimeUnit = 'day';
 
 // Initialize dashboard with data from backend
@@ -215,8 +233,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('pieStartDate').value = thirtyDaysAgo.toISOString().split('T')[0];
         document.getElementById('pieEndDate').value = today.toISOString().split('T')[0];
         
-        // Set current month for line chart
+        // Set current displays
         updateMonthDisplay();
+        updateYearDisplay();
         
         // Update all components
         updatePieChart();
@@ -226,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
         console.error('❌ Error parsing dashboard data:', error);
         document.getElementById('recentOrders').innerHTML = 
-            '<tr><td colspan="6" class="text-center text-danger">Error loading data</td></tr>';
+            '<tr><td colspan="7" class="text-center text-danger">Error loading data</td></tr>';
     }
 });
 
@@ -235,7 +254,7 @@ function updatePieChart() {
     
     const startDate = new Date(document.getElementById('pieStartDate').value);
     const endDate = new Date(document.getElementById('pieEndDate').value);
-    endDate.setHours(23, 59, 59, 999); // Include entire end date
+    endDate.setHours(23, 59, 59, 999);
     
     // Filter orders by date range
     const filteredOrders = dashboardData.orders.filter(order => {
@@ -273,7 +292,7 @@ function updatePieChart() {
         data.push(sales);
     });
     
-    // Add "Others" category if there are more medicines
+    // Add "Others" category
     const otherSales = totalSold - sortedSales.reduce((sum, [,sales]) => sum + sales, 0);
     if (otherSales > 0) {
         const percentage = totalSold > 0 ? ((otherSales / totalSold) * 100).toFixed(1) : 0;
@@ -330,12 +349,14 @@ function updateLineChart() {
     
     const orders = dashboardData.orders;
     let labels = [];
-    let data = [];
+    let revenueData = [];
+    let profitData = [];
     
     if (currentTimeUnit === 'day') {
-        // Daily revenue for current month
+        // Daily profit for current month
         const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
         const dailyRevenue = new Array(daysInMonth).fill(0);
+        const dailyProfit = new Array(daysInMonth).fill(0);
         
         orders.forEach(order => {
             const orderDate = new Date(order.created_at);
@@ -343,38 +364,48 @@ function updateLineChart() {
                 orderDate.getFullYear() === currentMonth.getFullYear()) {
                 const day = orderDate.getDate() - 1;
                 dailyRevenue[day] += order.total_amount;
+                dailyProfit[day] += order.profit;
             }
         });
         
         labels = Array.from({length: daysInMonth}, (_, i) => `Day ${i + 1}`);
-        data = dailyRevenue;
+        revenueData = dailyRevenue;
+        profitData = dailyProfit;
         
     } else if (currentTimeUnit === 'month') {
-        // Monthly revenue for current year
+        // Monthly profit for current year
         const monthlyRevenue = new Array(12).fill(0);
-        const currentYear = currentMonth.getFullYear();
+        const monthlyProfit = new Array(12).fill(0);
         
         orders.forEach(order => {
             const orderDate = new Date(order.created_at);
             if (orderDate.getFullYear() === currentYear) {
                 const month = orderDate.getMonth();
                 monthlyRevenue[month] += order.total_amount;
+                monthlyProfit[month] += order.profit;
             }
         });
         
         labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        data = monthlyRevenue;
+        revenueData = monthlyRevenue;
+        profitData = monthlyProfit;
         
     } else if (currentTimeUnit === 'year') {
-        // Yearly revenue
+        // Yearly profit - show all years
         const yearlyRevenue = {};
+        const yearlyProfit = {};
+        
         orders.forEach(order => {
             const year = new Date(order.created_at).getFullYear();
             yearlyRevenue[year] = (yearlyRevenue[year] || 0) + order.total_amount;
+            yearlyProfit[year] = (yearlyProfit[year] || 0) + order.profit;
         });
         
-        labels = Object.keys(yearlyRevenue).sort();
-        data = labels.map(year => yearlyRevenue[year]);
+        // Get sorted years
+        const years = Object.keys(yearlyRevenue).map(Number).sort();
+        labels = years.map(year => year.toString());
+        revenueData = years.map(year => yearlyRevenue[year]);
+        profitData = years.map(year => yearlyProfit[year]);
     }
     
     // Create or update line chart
@@ -388,15 +419,26 @@ function updateLineChart() {
         type: 'line',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Revenue (Ks)',
-                data: data,
-                borderColor: '#28a745',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
+            datasets: [
+                {
+                    label: 'Revenue (Ks)',
+                    data: revenueData,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Profit (Ks)',
+                    data: profitData,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
         },
         options: {
             responsive: true,
@@ -406,7 +448,7 @@ function updateLineChart() {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Revenue (Ks)'
+                        text: 'Amount (Ks)'
                     }
                 },
                 x: {
@@ -421,7 +463,9 @@ function updateLineChart() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return `Revenue: ${context.raw.toLocaleString()} Ks`;
+                            const datasetLabel = context.dataset.label || '';
+                            const value = context.raw || 0;
+                            return `${datasetLabel}: ${value.toLocaleString()} Ks`;
                         }
                     }
                 }
@@ -432,14 +476,25 @@ function updateLineChart() {
 
 function changeTimeUnit() {
     currentTimeUnit = document.getElementById('timeUnit').value;
-    document.getElementById('monthSelector').style.display = 
+    
+    // Show/hide appropriate selectors
+    document.getElementById('dailySelector').style.display = 
         currentTimeUnit === 'day' ? 'block' : 'none';
+    document.getElementById('monthlySelector').style.display = 
+        currentTimeUnit === 'month' ? 'block' : 'none';
+    
     updateLineChart();
 }
 
 function changeMonth(direction) {
     currentMonth.setMonth(currentMonth.getMonth() + direction);
     updateMonthDisplay();
+    updateLineChart();
+}
+
+function changeYear(direction) {
+    currentYear += direction;
+    updateYearDisplay();
     updateLineChart();
 }
 
@@ -451,6 +506,10 @@ function updateMonthDisplay() {
     document.getElementById('currentMonth').value = `${monthName} ${year}`;
 }
 
+function updateYearDisplay() {
+    document.getElementById('currentYear').value = currentYear;
+}
+
 function updateRecentOrders() {
     if (!dashboardData) return;
     
@@ -459,7 +518,7 @@ function updateRecentOrders() {
         .slice(0, 8);
     
     const ordersHtml = recentOrders.map(order => {
-        const mainItem = order.items[0]; // Show first item
+        const mainItem = order.items[0];
         const additionalItems = order.items.length > 1 ? ` +${order.items.length - 1} more` : '';
         
         return `
@@ -468,30 +527,20 @@ function updateRecentOrders() {
                 <td>${mainItem.medicine_name}${additionalItems}</td>
                 <td>${mainItem.quantity}</td>
                 <td>${order.total_amount.toLocaleString()} Ks</td>
-                <td><span class="badge bg-${getStatusColor(order.status)}">${order.status}</span></td>
+                <td class="text-success fw-bold">${order.profit.toLocaleString()} Ks</td>
+                <td><span class="badge bg-success">${order.order_status}</span></td>
                 <td><small>${formatDate(order.created_at)}</small></td>
             </tr>
         `;
     }).join('');
     
     document.getElementById('recentOrders').innerHTML = ordersHtml || 
-        '<tr><td colspan="6" class="text-center">No orders yet</td></tr>';
+        '<tr><td colspan="7" class="text-center">No paid orders yet</td></tr>';
 }
 
 function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-}
-
-function getStatusColor(status) {
-    const colors = {
-        'completed': 'success',
-        'pending': 'warning',
-        'cancelled': 'danger',
-        'processing': 'info',
-        'delivered': 'primary'
-    };
-    return colors[status.toLowerCase()] || 'secondary';
 }
 </script>
 
@@ -516,15 +565,11 @@ function getStatusColor(status) {
     width: 100%;
 }
 
-#monthSelector {
-    display: block;
-}
-
 .input-group {
     width: 180px;
 }
 
-#currentMonth {
+#currentMonth, #currentYear {
     background-color: white;
     font-weight: 500;
     text-align: center;
@@ -542,6 +587,14 @@ function getStatusColor(status) {
 
 .badge {
     font-size: 0.75rem;
+}
+
+.text-success {
+    color: #28a745 !important;
+}
+
+#chart_section {
+  scroll-margin-top: 100px; /* leaves 100px space when scrolled into view */
 }
 </style>
 {% endblock %}

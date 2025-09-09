@@ -51,18 +51,28 @@
                                 placeholder="eg. Made in US. Effective in curing fever..."></textarea>
                     </div>
                     
-                    <!-- Stock and Price -->
+                    <!-- Stock -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="stock" class="form-label">Stock Quantity <b class="text-danger">*</b></label>
+                                <input type="number" class="form-control" id="stock" name="stock" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="stock" class="form-label">Stock Quantity (for a Pack of 10 tablets) <b class="text-danger">*</b></label>
-                                <input type="number" class="form-control" id="stock" name="stock" min="0" required>
+                                <label for="buying_price" class="form-label">Buying Price (Ks) <b class="text-danger">*</b></label>
+                                <input type="number" class="form-control" id="buying_price" name="buying_price" step="0.01" min="0" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="price" class="form-label">Price (for a Pack of 10 tablets) <b class="text-danger">*</b></label>
-                                <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                                <label for="selling_price" class="form-label">Selling Price (Ks) <b class="text-danger">*</b></label>
+                                <input type="number" class="form-control" id="selling_price" name="selling_price" step="0.01" min="0" required>
                             </div>
                         </div>
                     </div>

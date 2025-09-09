@@ -93,12 +93,36 @@ async def buyer_medicines(request: Request, current_user: dict = Depends(require
     )
 
 
+from utils import equirectangular_distance
 
 @router.get("/buyer/pharmacies", response_class=HTMLResponse)
 def buyer_pharmacies(request: Request, current_user: dict = Depends(require_role("buyer"))):
-    # Fetch the list of pharmacies available in the system
     db = get_database()
-    pharmacies = list(db.pharmacy_profiles.find({}))  # Use list() to convert the cursor
+    pharmacies = list(db.pharmacy_profiles.find({}))
+    # NOTE: For real Myanmar locations, ensure each pharmacy in the DB has latitude/longitude fields.
+    # If not, use a geocoding service to convert the address to lat/lon and store it in the DB.
+    # The equirectangular_distance function is used for distance calculation (not Haversine).
+    # Get user location from query params
+    lat = request.query_params.get('lat')
+    lon = request.query_params.get('lon')
+    q = request.query_params.get('q', '').lower()
+    if lat and lon:
+        try:
+            lat = float(lat)
+            lon = float(lon)
+            for p in pharmacies:
+                plat = p.get('latitude')
+                plon = p.get('longitude')
+                if plat is not None and plon is not None:
+                    p['distance'] = equirectangular_distance(lat, lon, float(plat), float(plon))
+                else:
+                    p['distance'] = float('inf')
+            pharmacies.sort(key=lambda x: x['distance'])
+        except Exception:
+            pass
+    # Filter by search query if present
+    if q:
+        pharmacies = [p for p in pharmacies if q in p.get('pharmacy_name', '').lower() or q in p.get('address', '').lower()]
     return templates.TemplateResponse("buyer/pharmacies.html", {
         "request": request,
         "current_user": current_user,
