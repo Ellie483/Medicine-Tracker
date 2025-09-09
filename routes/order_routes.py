@@ -214,10 +214,11 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
+from reportlab.pdfbase import pdfmetrics
 
 def _generate_seller_receipt(db, order: dict, out_dir: str = "static/seller_receipts") -> str:
     """
-    Create a simple PDF voucher (seller-issued receipt) for the order.
+    Create a nicer PDF voucher (seller-issued receipt) for the order.
     Returns a web path like: /static/seller_receipts/<order_id>/receipt.pdf
     """
     import os
@@ -228,78 +229,156 @@ def _generate_seller_receipt(db, order: dict, out_dir: str = "static/seller_rece
     pdf_path = os.path.join(subdir, "receipt.pdf")
     url_path = f"/{subdir.replace(os.sep, '/')}/receipt.pdf"
 
-    # Data we’ll show
+    # ---- data ----
     buyer_name, _, _ = _lookup_buyer_display(db, order.get("buyer_id"))
-    ship = _extract_shipping(order)  # returns {"address": ..., "city": ...}
-    addr = (ship or {}).get("address") or "-"
-    city = (ship or {}).get("city") or "-"
+    ship = _extract_shipping(order) or {}
+    addr = ship.get("address") or ship.get("address_line") or ship.get("line1") or "-"
+    city = ship.get("city") or "-"
 
     created_str = _fmt_dt_local(order.get("created_at"), "Asia/Yangon")
     pharmacy_name = order.get("pharmacy_name") or "Unknown Pharmacy"
-    items = order.get("items") or []
+    items = list(order.get("items") or [])
 
     total_amount = order.get("total_amount")
     if total_amount is None:
-        total_amount = sum(int(i.get("quantity", 0) or 0) * float(i.get("price", 0) or 0.0) for i in items)
-    total_fmt = format_currency(total_amount)
+        total_amount = sum(
+            int(i.get("quantity", 0) or 0) * float(i.get("price", 0) or 0.0)
+            for i in items
+        )
 
-    # PDF
+    # ---- pdf canvas ----
     c = canvas.Canvas(pdf_path, pagesize=A4)
     W, H = A4
-    x = 18 * mm
-    y = H - 25 * mm
+    margin_x = 18 * mm
+    margin_top = 20 * mm
+    y = H - margin_top
 
-    def head():
+    # table geometry
+    table_left = margin_x
+    table_right = W - margin_x
+    table_width = table_right - table_left
+
+    # columns: Name (68%), Qty (10%), Price (22%)
+    name_w  = table_width * 0.68
+    qty_w   = table_width * 0.10
+    price_w = table_width * 0.22
+
+    # x positions (left edges); for right-align we will use right edge
+    x_name  = table_left
+    x_qty_r = table_left + name_w + qty_w  # right edge of qty col
+    x_price_r = table_right                # right edge of price col
+
+    def hr(y_pos, lw=0.6, col=colors.black):
+        c.setLineWidth(lw)
+        c.setStrokeColor(col)
+        c.line(table_left, y_pos, table_right, y_pos)
+
+    def clip_text_to_width(text, max_w, font="Helvetica", size=10):
+        """Return text that fits into max_w (in points), trimming with … if needed."""
+        w = pdfmetrics.stringWidth(text, font, size)
+        if w <= max_w:
+            return text
+        ell = "…"
+        ell_w = pdfmetrics.stringWidth(ell, font, size)
+        # binary-ish shrink
+        s = text
+        while s and pdfmetrics.stringWidth(s, font, size) + ell_w > max_w:
+            s = s[:-1]
+        return (s + ell) if s else text[:1] + ell
+
+    def draw_header():
         nonlocal y
-        c.setFont("Helvetica-Bold", 16)
-        c.drawString(x, y, f"{pharmacy_name} — Voucher")
+        c.setFont("Helvetica-Bold", 18)
+        c.drawString(margin_x, y, f"{pharmacy_name} — Voucher")
         y -= 8 * mm
-        c.setFont("Helvetica", 10)
-        c.drawString(x, y, f"Order ID: {order['_id']}")
-        y -= 5 * mm
-        c.drawString(x, y, f"Date: {created_str}")
-        y -= 5 * mm
-        c.drawString(x, y, f"Buyer: {buyer_name}")
-        y -= 5 * mm
-        c.drawString(x, y, f"Ship To: {addr}{', ' + city if city else ''}")
-        y -= 10 * mm
 
-    def table():
+        c.setFont("Helvetica", 10.5)
+        c.drawString(margin_x, y, f"Order ID: {order['_id']}")
+        y -= 5 * mm
+        c.drawString(margin_x, y, f"Date: {created_str}")
+        y -= 5 * mm
+        c.drawString(margin_x, y, f"Buyer: {buyer_name}")
+        y -= 5 * mm
+        c.drawString(margin_x, y, f"Ship To: {addr}{', ' + city if city else ''}")
+        y -= 6 * mm
+
+        c.setStrokeColor(colors.HexColor("#D9D9D9"))
+        hr(y)
+        c.setStrokeColor(colors.black)
+        y -= 8 * mm
+
+    def draw_table_header():
         nonlocal y
-        c.setFont("Helvetica-Bold", 10)
-        c.drawString(x, y, "Medicine")
-        c.drawRightString(W - x - 60, y, "Qty")
-        c.drawRightString(W - x - 20, y, "Price")
-        y -= 5 * mm
-        c.setLineWidth(0.5); c.line(x, y, W - x, y); y -= 5 * mm
-
-        c.setFont("Helvetica", 10)
-        for it in items:
-            name = str(it.get("medicine_name", "Unknown"))
-            qty = int(it.get("quantity", 0) or 0)
-            price = float(it.get("price", 0) or 0.0)
-            c.drawString(x, y, name)
-            c.drawRightString(W - x - 60, y, str(qty))
-            c.drawRightString(W - x - 20, y, f"{price:,.2f}Ks")
-            y -= 6 * mm
-            if y < 40 * mm:
-                c.showPage(); y = H - 25 * mm
-        y -= 3 * mm
-        c.line(x, y, W - x, y); y -= 8 * mm
-        c.setFont("Helvetica-Bold", 11)
-        c.drawRightString(W - x - 20, y, f"Total: {total_fmt}")
-        y -= 12 * mm
-
-    def foot():
-        nonlocal y
-        c.setFont("Helvetica-Oblique", 9)
-        c.setFillColor(colors.gray)
-        c.drawString(x, y, "Thank you for your purchase.")
-        y -= 5 * mm
-        c.drawString(x, y, "This voucher was generated by the pharmacy system.")
+        c.setFillColor(colors.HexColor("#F4F6F8"))
+        c.rect(table_left, y - 14, table_width, 16, stroke=0, fill=1)
         c.setFillColor(colors.black)
 
-    head(); table(); foot()
+        c.setFont("Helvetica-Bold", 10)
+        c.drawString(x_name + 3, y - 11, "Medicine")
+        c.drawRightString(x_qty_r - 3, y - 11, "Qty")
+        c.drawRightString(x_price_r - 3, y - 11, "Price")
+        y -= 18
+
+        c.setStrokeColor(colors.HexColor("#E5E7EB"))
+        hr(y)
+        c.setStrokeColor(colors.black)
+        y -= 6
+
+    def ensure_room(min_h=24*mm):
+        """Start a new page if we don't have vertical space; redraw headers."""
+        nonlocal y
+        if y < min_h:
+            c.showPage()
+            # reset margins & geometry for new page
+            nonlocal W, H, table_left, table_right, table_width
+            W, H = A4
+            y = H - margin_top
+            draw_header()
+            draw_table_header()
+
+    # ---- draw ----
+    draw_header()
+    draw_table_header()
+
+    c.setFont("Helvetica", 10)
+    row_h = 14  # row height
+
+    for it in items:
+        ensure_room()
+
+        name  = str(it.get("medicine_name", "Unknown"))
+        qty   = int(it.get("quantity", 0) or 0)
+        price = float(it.get("price", 0) or 0.0)
+
+        # trim long names to fit name column
+        name_txt = clip_text_to_width(name, name_w - 6, "Helvetica", 10)
+
+        # Name (left), Qty (right), Price (right)
+        c.drawString(x_name + 3, y - 10, name_txt)
+        c.drawRightString(x_qty_r - 3, y - 10, f"{qty:d}")
+        c.drawRightString(x_price_r - 3, y - 10, f"{price:,.2f}Ks")
+
+        y -= row_h
+        # light row divider
+        c.setStrokeColor(colors.HexColor("#F1F3F5"))
+        hr(y)
+        c.setStrokeColor(colors.black)
+        y -= 2
+
+    # total row
+    y -= 8
+    c.setFont("Helvetica-Bold", 11.5)
+    c.drawRightString(x_price_r - 3, y, f"Total: {total_amount:,.2f}Ks")
+    y -= 16
+
+    # footer
+    c.setFont("Helvetica-Oblique", 9)
+    c.setFillColor(colors.gray)
+    c.drawString(margin_x, y, "Thank you for your purchase.")
+    y -= 12
+    c.drawString(margin_x, y, "This voucher was generated by the pharmacy system.")
+    c.setFillColor(colors.black)
+
     c.save()
     return url_path
 
@@ -805,6 +884,7 @@ def buyer_order_detail(
             "payment_id": (o.get("payment") or {}).get("payment_id"),
             "receipt_path": (o.get("payment") or {}).get("receipt_path"),
             "seller_receipt_path": (o.get("payment") or {}).get("seller_receipt_path"), 
+            "seller_receipt_sent_at": (o.get("payment") or {}).get("seller_receipt_sent_at"),
             "rejected_reason": (o.get("payment") or {}).get("rejected_reason"),
             "uploaded_at": (o.get("payment") or {}).get("uploaded_at"),
         },
