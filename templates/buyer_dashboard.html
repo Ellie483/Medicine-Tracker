@@ -99,7 +99,7 @@
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="card-title mb-0">{{ medicine.name }}</h6>
-                                        <span class="badge bg-success">₹{{ "%.2f"|format(medicine.price) }}</span>
+                                        <span class="badge bg-success">{{ "%.2f"|format(medicine.price) }}Ks</span>
                                     </div>
                                     <p class="card-text small text-muted mb-2">
                                         Stock: {{ medicine.stock }} | 
@@ -175,7 +175,7 @@
                         <small class="text-muted">{{ order.created_at.strftime('%m/%d') }}</small>
                     </div>
                     <div class="d-flex justify-content-between">
-                        <small>₹{{ "%.2f"|format(order.total_amount) }}</small>
+                        <small>{{ "%.2f"|format(order.total_amount) }}Ks</small>
                         <span class="badge bg-{% if order.status == 'pending' %}warning{% elif order.status == 'confirmed' %}info{% else %}success{% endif %} badge-sm">
                             {{ order.status.title() }}
                         </span>

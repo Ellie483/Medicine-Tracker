@@ -37,37 +37,50 @@ def buyer_home(request: Request, current_user: dict = Depends(require_role("buye
     })
 
 
+from datetime import datetime
+
 @router.get("/buyer/medicines", response_class=HTMLResponse)
 async def buyer_medicines(request: Request, current_user: dict = Depends(require_role("buyer"))):
     db = get_database()
-    
-    # Fetch medicines with stock > 0 and not expired
-    medicines_cursor = db.Medicine.find({
-        "stock": {"$gt": 0},
-        "expiration_date": {"$gte": datetime.utcnow()}
+
+    # availability: stock - reserved > 0
+    cur = db.Medicine.find({
+        "$expr": {"$gt": [
+            {"$subtract": ["$stock", {"$ifNull": ["$reserved", 0]}]},
+            0
+        ]},
+        "$or": [
+            {"expiration_date": {"$exists": False}},
+            {"expiration_date": {"$gte": datetime.utcnow()}}
+        ]
     })
 
-    medicines = list(medicines_cursor)
+    meds = list(cur)
     medicines_data = []
+    for med in meds:
+        stock    = int(med.get("stock", 0) or 0)
+        reserved = int(med.get("reserved", 0) or 0)
+        available = max(0, stock - reserved)
 
-    for med in medicines:
-        # Find pharmacy by seller_id → user_id in pharmacy_profiles
-        pharmacy = db.pharmacy_profiles.find_one({"user_id": med["seller_id"]})
-
-        med_data = {
+        pharmacy = db.pharmacy_profiles.find_one({"user_id": med.get("seller_id")})
+        medicines_data.append({
             "_id": str(med["_id"]),
             "name": med.get("name"),
             "buying_price": med.get("buying_price"),
             "selling_price": med.get("selling_price"),
-            "stock": med.get("stock"),
+            "stock": stock,
+            "reserved": reserved,
+            "available": available,
             "description": med.get("description"),
             "formatted_price": format_currency(med.get("selling_price", 0)),
-            "is_expired": med["expiration_date"] < datetime.utcnow() if med.get("expiration_date") else False,
-            "expiration_date": med["expiration_date"].strftime("%Y-%m-%d") if med.get("expiration_date") else None,
-            "pharmacy_name": pharmacy.get("pharmacy_name") if pharmacy else "Unknown Pharmacy",
-            "image_url": f"/static/uploads/{med.get('image_filename')}" if med.get("image_filename") else None,
-        }
-        medicines_data.append(med_data)
+            "is_expired": bool(med.get("expiration_date") and med["expiration_date"] < datetime.utcnow()),
+            "expiration_date": (med.get("expiration_date").strftime("%Y-%m-%d") if med.get("expiration_date") else None),
+            "pharmacy_name": (pharmacy.get("pharmacy_name") if pharmacy else "Unknown Pharmacy"),
+            "image_url": (f"/static/uploads/{med.get('image_filename')}" if med.get("image_filename") else None),
+        })
+
+    # Count only items with availability > 0, in case you reuse the badge
+    available_count = sum(1 for m in medicines_data if (m["available"] or 0) > 0)
 
     return templates.TemplateResponse(
         "buyer/medicines.html",
@@ -75,6 +88,7 @@ async def buyer_medicines(request: Request, current_user: dict = Depends(require
             "request": request,
             "current_user": current_user,
             "medicines": medicines_data,
+            "available_count": available_count,
         },
     )
 
