@@ -1,147 +1,650 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pharmacy Registration | Medicine Tracker</title>
 
-{% block title %}Register as Pharmacy | Medicine Tracker{% endblock %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-{% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white text-center">
-                    <h3><i class="fas fa-store me-2"></i>Register as Pharmacy</h3>
-                    <p class="mb-0">Create your pharmacy account</p>
-                </div>
-                <div class="card-body p-4">
-                    {% if error %}
-                    <div class="alert alert-danger" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
-                    </div>
-                    {% endif %}
+  <style>
+    :root {
+      --ref-deep: #0e8a83;
+      --ref-teal: #16c2b3;
+      --ref-mint: #c8f3ea;
+      --ink: #0c1b1c;
+      --line: #e6efee;
+      --danger: #dc3545;
+    }
 
-                    <form method="post" action="/register/seller">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="username" class="form-label">
-                                        <i class="fas fa-user me-1"></i>Username *
-                                    </label>
-                                    <input type="text" class="form-control" id="username" name="username" required 
-                                           placeholder="Choose a unique username">
-                                    <div class="form-text">This will be used to log in to your account</div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">
-                                        <i class="fas fa-lock me-1"></i>Password *
-                                    </label>
-                                    <input type="password" class="form-control" id="password" name="password" required 
-                                           placeholder="Enter a secure password" minlength="6">
-                                    <div class="form-text">Password must be at least 6 characters long</div>
-                                </div>
-                            </div>
-                        </div>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(180deg, var(--ref-mint) 0%, #ffffff 100%);
+      background-attachment: fixed;
+      color: var(--ink);
+      padding-top: 0;
+      margin: 0;
+    }
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="pharmacy_name" class="form-label">
-                                        <i class="fas fa-store me-1"></i>Pharmacy Name *
-                                    </label>
-                                    <input type="text" class="form-control" id="pharmacy_name" name="pharmacy_name" required 
-                                           placeholder="Enter your pharmacy name">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="license_number" class="form-label">
-                                        <i class="fas fa-certificate me-1"></i>License Number *
-                                    </label>
-                                    <input type="text" class="form-control" id="license_number" name="license_number" required 
-                                           placeholder="Enter pharmacy license number">
-                                    <div class="form-text">Must be a valid pharmacy license</div>
-                                </div>
-                            </div>
-                        </div>
+    .navbar-custom {
+      background: linear-gradient(135deg, var(--ref-deep) 0%, var(--ref-teal) 100%);
+      padding: 0.5rem 1rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
 
-                        <div class="mb-3">
-                            <label for="contact_info" class="form-label">
-                                <i class="fas fa-phone me-1"></i>Contact Information *
-                            </label>
-                            <input type="text" class="form-control" id="contact_info" name="contact_info" required 
-                                   placeholder="Phone number, email, etc.">
-                            <div class="form-text">Primary contact method for customers</div>
-                        </div>
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: white !important;
+    }
 
-                        <div class="mb-3">
-                            <label for="address" class="form-label">
-                                <i class="fas fa-map-marker-alt me-1"></i>Pharmacy Address *
-                            </label>
-                            <textarea class="form-control" id="address" name="address" rows="3" required 
-                                      placeholder="Enter complete pharmacy address"></textarea>
-                            <div class="form-text">This helps customers find your pharmacy</div>
-                        </div>
+    .navbar-nav .nav-link {
+      color: rgba(255, 255, 255, 0.9) !important;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
 
-                        <div class="mb-4">
-                            <label for="operating_hours" class="form-label">
-                                <i class="fas fa-clock me-1"></i>Operating Hours *
-                            </label>
-                            <input type="text" class="form-control" id="operating_hours" name="operating_hours" required 
-                                   placeholder="e.g., Mon-Fri: 9AM-8PM, Sat: 9AM-6PM, Sun: Closed">
-                            <div class="form-text">When is your pharmacy open for business?</div>
-                        </div>
+    .navbar-nav .nav-link:hover {
+      color: white !important;
+      background-color: rgba(255, 255, 255, 0.15);
+    }
 
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Note:</strong> Your pharmacy registration will be reviewed for compliance with local regulations. 
-                            Please ensure all information is accurate and up-to-date.
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="fas fa-store me-2"></i>Create Pharmacy Account
-                            </button>
-                        </div>
-                    </form>
-
-                    <div class="text-center mt-4">
-                        <p class="text-muted">
-                            Want to register as a buyer instead? 
-                            <a href="/register/buyer" class="text-decoration-none">Click here</a>
-                        </p>
-                        <p class="text-muted">
-                            Already have an account? 
-                            <a href="/" class="text-decoration-none">Sign in here</a>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-// Form validation
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    const password = document.getElementById('password');
-    const licenseNumber = document.getElementById('license_number');
-    
-    form.addEventListener('submit', function(e) {
-        if (password.value.length < 6) {
-            e.preventDefault();
-            alert('Password must be at least 6 characters long');
-            password.focus();
-            return;
+    .nav-btn {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            margin-left: 0.5rem;
+            transition: all 0.3s;
         }
         
-        if (licenseNumber.value.trim().length < 3) {
+        .nav-btn-login {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .nav-btn-login:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+        
+        .nav-btn-register {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: var(--ref-deep) !important;
+            border: 1px solid white;
+        }
+        
+        .nav-btn-register:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, var(--ref-deep) 0%, var(--ref-teal) 100%);
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--ref-deep) 0%, var(--ref-teal) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .card {
+      border-radius: 15px;
+      overflow: hidden;
+      border: none;
+      box-shadow: 0 10px 30px rgba(14, 138, 131, 0.15);
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, var(--ref-deep) 0%, var(--ref-teal) 100%);
+      border-bottom: none;
+      padding: 1.2rem 1.5rem;
+    }
+
+    .form-control, .form-select {
+      border-radius: 8px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      transition: all 0.3s;
+      font-size: 0.9rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--ref-teal);
+      box-shadow: 0 0 0 0.25rem rgba(22, 194, 179, 0.2);
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, var(--ref-deep) 0%, var(--ref-teal) 100%);
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-weight: 500;
+      transition: all 0.3s;
+      font-size: 1rem;
+      color: white;
+    }
+
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(14, 138, 131, 0.3);
+      color: white;
+    }
+
+    .section-divider {
+      color: var(--ref-deep);
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin: 20px 0 15px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--ref-teal);
+    }
+
+    .time-slot {
+      background-color: rgba(200, 243, 234, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid var(--line);
+      width: 100%;
+    }
+
+    .opening-hours {
+      background-color: rgba(200, 243, 234, 0.2);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid var(--line);
+    }
+
+    .summary-item {
+      padding: 5px 0;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .summary-item:last-child {
+      border-bottom: none;
+    }
+
+    .compact-form .form-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .icon-box {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--ref-deep) 0%, var(--ref-teal) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.9rem;
+    }
+
+    .qr-upload-area {
+      border: 2px dashed var(--line);
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 15px;
+    }
+
+    .qr-upload-area:hover {
+      border-color: var(--ref-teal);
+    }
+
+    .qr-preview {
+      max-width: 200px;
+      max-height: 200px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .day-label {
+      font-weight: 500;
+      margin-right: 15px;
+      min-width: 100px;
+    }
+
+    .payment-section {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 15px;
+    }
+
+    .day-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .day-row:hover {
+      background-color: rgba(200, 243, 234, 0.2);
+    }
+
+    .closed-day {
+      background-color: rgba(220, 53, 69, 0.1);
+    }
+
+    .day-toggle {
+      cursor: pointer;
+      color: var(--ref-teal);
+      min-width: 80px;
+      text-align: right;
+    }
+
+    .time-inputs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .time-input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .time-separator {
+      font-weight: bold;
+      color: var(--ref-deep);
+      margin: 0 5px;
+    }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .template-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .template-row .form-control {
+      flex: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-pills me-2"></i>ShweMedi</a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link nav-btn nav-btn-login" href="/login">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-btn nav-btn-register" href="/register/buyer">
+                            <i class="fas fa-user me-1"></i>Register as Buyer
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+  <div class="container mt-4">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="card">
+          <div class="card-header text-white text-center py-3">
+            <h4 class="mb-0"><i class="fas fa-store me-2"></i>Register as Pharmacy</h4>
+          </div>
+
+          <div class="card-body p-4">
+            <form class="compact-form" id="registrationForm" method="post" action="/register/seller" enctype="multipart/form-data">
+
+              <!-- Pharmacy Info -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Pharmacy Name *</label>
+                  <input type="text" class="form-control" id="pharmacy_name" name="pharmacy_name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">License Number *</label>
+                  <input type="text" class="form-control" id="license_number" name="license_number" required>
+                </div>
+              </div>
+
+              <!-- Contact -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Phone Number *</label>
+                  <div class="input-group">
+                    <span class="input-group-text">+95</span>
+                    <input type="tel" class="form-control" id="phone" name="phone" required placeholder="9xxxxxxxxx">
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Township *</label>
+                  <select class="form-select" id="township" name="township" required>
+                    <option value="">Select Township</option>
+                    <option value="Ahlone">Ahlone</option>
+                    <option value="Bahan">Bahan</option>
+                    <option value="Dagon">Dagon</option>
+                    <option value="Hlaing">Hlaing</option>
+                    <option value="Insein">Insein</option>
+                    <option value="Kamayut">Kamayut</option>
+                    <option value="Kyeemyindaing">Kyeemyindaing</option>
+                    <option value="Kyauktada">Kyauktada</option>
+                    <option value="Lanmadaw">Lanmadaw</option>
+                    <option value="Latha">Latha</option>
+                    <option value="Mayangone">Mayangone</option>
+                    <option value="Mingaladon">Mingaladon</option>
+                    <option value="Mingalartaungnyunt">Mingalartaungnyunt</option>
+                    <option value="North Okkalapa">North Okkalapa</option>
+                    <option value="North Dagon">North Dagon</option>
+                    <option value="Pabedan">Pabedan</option>
+                    <option value="Pazundaung">Pazundaung</option>
+                    <option value="Sanchaung">Sanchaung</option>
+                    <option value="Shwepyithar">Shwepyithar</option>
+                    <option value="South Okkalapa">South Okkalapa</option>
+                    <option value="South Dagon">South Dagon</option>
+                    <option value="Tamwe">Tamwe</option>
+                    <option value="Thaketa">Thaketa</option>
+                    <option value="Thingangyun">Thingangyun</option>
+                    <option value="Yankin">Yankin</option>
+                    <option value="Shwepyithar">Shwepyithar</option>
+
+                  </select>
+                </div>
+              </div>
+
+              <!-- Address -->
+              <div class="mb-3">
+                <label class="form-label">Address *</label>
+                <input type="text" class="form-control" id="address" name="address" required>
+              </div>
+
+              <!-- Operating hours -->
+              <div class="mb-3">
+                <div class="template-row mb-2">
+                  <input type="time" class="form-control" id="template_start" value="09:00">
+                  <input type="time" class="form-control" id="template_end" value="19:00">
+                  <button type="button" class="btn btn-outline-primary" id="apply_template">Apply to All Open Days</button>
+                </div>
+
+                <div class="time-slots"></div>
+
+                <div class="opening-hours mt-3">
+                  <h6 class="fw-semibold gradient-text">Opening Hours</h6>
+                  <div id="opening-hours-summary"></div>
+                </div>
+              </div>
+
+              <!-- Payment -->
+              <div class="payment-section mb-3">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Payment Phone Number</label>
+                    <div class="input-group">
+                      <span class="input-group-text">+95</span>
+                      <input type="tel" class="form-control" id="payment_phone" name="payment_phone" placeholder="9xxxxxxxxx">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">QR Code</label>
+                  <div class="qr-upload-area" id="qrUploadArea">
+                    <i class="fas fa-qrcode fa-3x mb-3 gradient-text"></i>
+                    <p>Click to upload your payment QR code</p>
+                    <input type="file" id="qrCode" name="qrCode" accept="image/*" hidden>
+                    <img id="qrPreview" class="qr-preview" alt="QR preview">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Security -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Password *</label>
+                  <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Confirm Password *</label>
+                  <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                </div>
+              </div>
+
+              <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-gradient"><i class="fas fa-store me-2"></i>Create Pharmacy Account</button>
+              </div>
+
+            </form>
+                <div class="text-center mt-4 pt-3 border-top">
+                    <p class="text-muted mb-1">Want to register as a buyer instead?   <a href="/register/buyer" class="text-decoration-none gradient-text fw-semibold">Click here to register as Buyer</a></p>
+            
+                    <p class="text-muted mt-3 mb-0">Already have an account?  <a href="/login" class="text-decoration-none gradient-text fw-semibold">Sign in to your account</a></p>
+                            
+                </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const days = [
+        { id: 'mon', name: 'Monday' },
+        { id: 'tue', name: 'Tuesday' },
+        { id: 'wed', name: 'Wednesday' },
+        { id: 'thu', name: 'Thursday' },
+        { id: 'fri', name: 'Friday' },
+        { id: 'sat', name: 'Saturday' },
+        { id: 'sun', name: 'Sunday' }
+      ];
+
+      const timeSlotsContainer = document.querySelector('.time-slots');
+      const openingHoursContainer = document.getElementById('opening-hours-summary');
+
+      days.forEach(day => {
+        const dayRow = document.createElement('div');
+        dayRow.className = 'day-row';
+        dayRow.id = `${day.id}-row`;
+        dayRow.innerHTML = `
+          <div class="day-label">${day.name}</div>
+          <div class="time-inputs">
+            <input type="time" class="form-control ${day.id}-start" name="${day.id}_start" value="09:00">
+            <span class="time-separator">to</span>
+            <input type="time" class="form-control ${day.id}-end" name="${day.id}_end" value="19:00">
+          </div>
+          <div class="day-toggle" data-day="${day.id}">
+            <i class="fas fa-toggle-on text-success"></i> Open
+          </div>
+        `;
+        timeSlotsContainer.appendChild(dayRow);
+
+        const dayToggle = dayRow.querySelector('.day-toggle');
+        const startInput = dayRow.querySelector(`.${day.id}-start`);
+        const endInput = dayRow.querySelector(`.${day.id}-end`);
+        const timeInputsDiv = dayRow.querySelector('.time-inputs');
+
+        dayToggle.addEventListener('click', function() {
+          const isOpen = this.querySelector('i').classList.contains('fa-toggle-on');
+          if (isOpen) {
+            this.innerHTML = '<i class="fas fa-toggle-off text-danger"></i> Closed';
+            dayRow.classList.add('closed-day');
+            startInput.disabled = true;
+            endInput.disabled = true;
+            timeInputsDiv.style.display = 'none';
+          } else {
+            this.innerHTML = '<i class="fas fa-toggle-on text-success"></i> Open';
+            dayRow.classList.remove('closed-day');
+            startInput.disabled = false;
+            endInput.disabled = false;
+            timeInputsDiv.style.display = 'flex';
+            startInput.value = '09:00';
+            endInput.value = '19:00';
+          }
+          updateOpeningHoursSummary();
+        });
+
+        startInput.addEventListener('change', updateOpeningHoursSummary);
+        endInput.addEventListener('change', updateOpeningHoursSummary);
+      });
+
+      document.getElementById('apply_template').addEventListener('click', function() {
+        const startTime = document.getElementById('template_start').value;
+        const endTime = document.getElementById('template_end').value;
+        days.forEach(day => {
+          const dayToggle = document.querySelector(`[data-day="${day.id}"]`);
+          const isOpen = dayToggle.querySelector('i').classList.contains('fa-toggle-on');
+          if (isOpen) {
+            document.querySelector(`.${day.id}-start`).value = startTime;
+            document.querySelector(`.${day.id}-end`).value = endTime;
+          }
+        });
+        updateOpeningHoursSummary();
+      });
+
+      function updateOpeningHoursSummary() {
+        openingHoursContainer.innerHTML = '';
+        const dayInfo = days.map(day => {
+          const dayToggle = document.querySelector(`[data-day="${day.id}"]`);
+          const isOpen = dayToggle.querySelector('i').classList.contains('fa-toggle-on');
+          const startInput = document.querySelector(`.${day.id}-start`);
+          const endInput = document.querySelector(`.${day.id}-end`);
+          return {
+            id: day.id,
+            name: day.name,
+            shortName: day.name.substring(0,3),
+            isOpen,
+            start: startInput ? startInput.value : '',
+            end: endInput ? endInput.value : '',
+            range: isOpen && startInput && endInput ? `${formatTime(startInput.value)}-${formatTime(endInput.value)}` : 'Closed'
+          };
+        });
+
+        const groups = {};
+        dayInfo.forEach(d => {
+          if (!groups[d.range]) groups[d.range] = [];
+          groups[d.range].push(d);
+        });
+
+        Object.entries(groups).forEach(([range, daysInGroup]) => {
+          const sorted = daysInGroup.sort((a,b) => {
+            return days.findIndex(dd => dd.id === a.id) - days.findIndex(dd => dd.id === b.id);
+          });
+
+          const ranges = [];
+          let tempStart = sorted[0];
+          let prev = sorted[0];
+          for (let i = 1; i < sorted.length; i++) {
+            const prevIndex = days.findIndex(dd => dd.id === prev.id);
+            const currIndex = days.findIndex(dd => dd.id === sorted[i].id);
+            if (currIndex === prevIndex + 1) {
+              prev = sorted[i];
+            } else {
+              ranges.push({ start: tempStart, end: prev });
+              tempStart = sorted[i];
+              prev = sorted[i];
+            }
+          }
+          ranges.push({ start: tempStart, end: prev });
+
+          const dayLabels = ranges.map(r => r.start.id === r.end.id ? r.start.shortName : `${r.start.shortName}-${r.end.shortName}`);
+          const summaryItem = document.createElement('div');
+          summaryItem.className = 'summary-item';
+          summaryItem.innerHTML = `<small class="fw-medium">${dayLabels.join(', ')}:</small> <small class="float-end">${range}</small>`;
+          openingHoursContainer.appendChild(summaryItem);
+        });
+
+        if (Object.keys(groups).length === 0) {
+          openingHoursContainer.innerHTML = '<div class="text-center text-muted">No hours set</div>';
+        }
+      }
+
+      function formatTime(timeString) {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        const h = parseInt(hours, 10);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const formattedHours = h % 12 || 12;
+        return `${formattedHours}:${minutes}${ampm}`;
+      }
+
+      updateOpeningHoursSummary();
+
+      // QR upload UI
+      const qrUploadArea = document.getElementById('qrUploadArea');
+      const qrInput = document.getElementById('qrCode');
+      const qrPreview = document.getElementById('qrPreview');
+
+      qrUploadArea.addEventListener('click', () => qrInput.click());
+
+      qrInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          alert('Please upload an image file (QR code)');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          qrPreview.src = e.target.result;
+          qrPreview.style.display = 'block';
+          qrUploadArea.querySelector('p').textContent = 'QR Code Uploaded';
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        const p = document.getElementById('password').value;
+        const cp = document.getElementById('confirm_password').value;
+        if (p !== cp) {
+          e.preventDefault();
+          alert('Passwords do not match');
+          return;
+        }
+        const passwordPattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).{8,}$/;
+        if (!passwordPattern.test(p)) {
+        e.preventDefault();
+        alert('Password must be at least 8 characters and include uppercase, lowercase, and a number');
+        return;
+        }
+        const requiredFields = ['pharmacy_name', 'license_number', 'phone', 'township', 'address'];
+        for (let field of requiredFields) {
+        if (!document.getElementById(field).value.trim()) {
             e.preventDefault();
-            alert('Please enter a valid license number');
-            licenseNumber.focus();
+            alert('Please fill all required fields');
             return;
         }
+        }
+      });
+
     });
-});
-</script>
-{% endblock %}
+  </script>
+</body>
+</html>

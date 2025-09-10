@@ -12,6 +12,10 @@ templates = Jinja2Templates(directory="templates")
 
 SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
+@router.get("/login")
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
 
 @router.get("/route_redirector")
 def route_redirector(request: Request):

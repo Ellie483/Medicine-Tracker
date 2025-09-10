@@ -5,12 +5,13 @@
 {% block head %}
 <style>
 :root {
-  --ref-deep:#0e8a83;
-  --ref-teal:#16c2b3;
-  --ref-mint:#c8f3ea;
+  --ref-deep:#0e8a83;   /* deep teal */
+  --ref-teal:#16c2b3;   /* bright teal */
+  --ref-mint:#c8f3ea;   /* pale mint */
   --ink:#0c1b1c;
   --line:#e6efee;
   --danger:#dc3545;
+  --btn-hover:#0b6e69;
 }
 
 body {
@@ -38,15 +39,70 @@ h2, h5, h6 {
 .btn-outline-success { color: var(--ref-teal); border-color: var(--ref-teal); }
 .btn-outline-success:hover { background-color: var(--ref-deep); color: #fff; }
 
-.card { border-radius: 12px; border: 1px solid var(--line); }
+.card { border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
 .card-body { background-color: #fff; border-radius: 12px; }
 
 .pharmacy-card { transition: transform 0.2s ease-in-out; }
-.pharmacy-card:hover { transform: translateY(-3px); box-shadow: 0 4px 14px rgba(14, 138, 131, 0.2); }
+.pharmacy-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(14, 138, 131, 0.2); }
 
 .border-end { border-right: 1px solid var(--line) !important; }
 @media (max-width: 576px) {
     .border-end { border-right: none !important; border-bottom: 1px solid var(--line) !important; padding-bottom: 0.5rem; margin-bottom: 0.5rem; }
+}
+
+/* ================== MODALS ================== */
+.modal-content {
+    border-radius: 16px;
+    overflow: hidden;
+    border: none;
+    background-color: #fff;
+}
+.modal-header {
+    background-color: var(--ref-teal);
+    color: #fff;
+}
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+.modal-body {
+    background-color: #fff;
+}
+.modal-footer {
+    background-color: #f5fdfd;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+.modal-title { color:#fff; }
+
+.medicine-card {
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--line);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.medicine-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(14, 138, 131, 0.15);
+}
+.medicine-price {
+    color: var(--ref-deep);
+    font-weight: bold;
+}
+.medicine-stock {
+    font-size: 0.85rem;
+    color: var(--ink);
+}
+
+.btn-browse {
+    background-color: var(--ref-deep);
+    color: #fff;
+    border-radius: 8px;
+}
+.btn-browse:hover {
+    background-color: var(--btn-hover);
+    color: #fff;
 }
 </style>
 {% endblock %}
@@ -165,7 +221,7 @@ h2, h5, h6 {
                         </button>
                         <div class="row g-2">
                             <div class="col-6">
-                                <button class="btn btn-outline-info btn-sm w-100" onclick="showContact('{{ pharmacy.pharmacy_name }}', '{{ pharmacy.contact_info }}', '{{ pharmacy.address }}')">
+                                <button class="btn btn-outline-info btn-sm w-100" onclick="showContact('{{ pharmacy.pharmacy_name }}', '{{ pharmacy.contact_info }}', '{{ pharmacy.address }}', '{{ pharmacy.operating_hours }}')">
                                     <i class="fas fa-info-circle me-1"></i>Details
                                 </button>
                             </div>
@@ -199,8 +255,52 @@ h2, h5, h6 {
     </div>
 </div>
 
-<!-- Modals remain unchanged (Details & Medicines) -->
+<!-- ================== MODALS ================== -->
 
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailsModalLabel"><i class="fas fa-info-circle me-2"></i>Pharmacy Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <h6 id="modalPharmacyName" class="fw-bold text-primary mb-3"></h6>
+        <p><i class="fas fa-phone text-success me-2"></i><span id="modalContact"></span></p>
+        <p><i class="fas fa-map-marker-alt text-danger me-2"></i><span id="modalAddress"></span></p>
+        <p><i class="fas fa-clock text-warning me-2"></i><span id="modalHours"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-success" onclick="getDirections(document.getElementById('modalAddress').textContent)">
+            <i class="fas fa-directions me-1"></i>Get Directions
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Medicines Modal -->
+<div class="modal fade" id="medicinesModal" tabindex="-1" aria-labelledby="medicinesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="medicinesModalLabel"><i class="fas fa-pills me-2"></i>Medicines at <span id="medicinesPharmacyName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="medicinesList">
+        <p class="text-muted text-center">Loading medicines...</p>
+      </div>
+      <div class="modal-footer">
+    <a href="/buyer/medicines" class="btn btn-browse" id="browseAllMedicinesBtn"><i class="fas fa-th-list me-1"></i> Browse All Medicines</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================== SCRIPTS ================== -->
 <script>
 function filterPharmacies() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -243,10 +343,11 @@ function clearSearch() {
 document.getElementById('searchInput').addEventListener('input', filterPharmacies);
 document.getElementById('sortBy').addEventListener('change', sortPharmacies);
 
-function showContact(name, contact, address) {
+function showContact(name, contact, address, hours) {
     document.getElementById('modalPharmacyName').textContent = name;
     document.getElementById('modalContact').textContent = contact;
     document.getElementById('modalAddress').textContent = address;
+    document.getElementById('modalHours').textContent = hours;
     new bootstrap.Modal(document.getElementById('detailsModal')).show();
 }
 
@@ -265,10 +366,10 @@ async function viewMedicines(pharmacyId, pharmacyName) {
             const medicines = await response.json();
             displayMedicines(medicines);
         } else {
-            document.getElementById('medicinesList').innerHTML = '<p class="text-muted text-center">Failed to load medicines</p>';
+            document.getElementById('medicinesList').innerHTML = '<p class="text-danger text-center">⚠️ Failed to load medicines</p>';
         }
     } catch (error) {
-        document.getElementById('medicinesList').innerHTML = '<p class="text-muted text-center">Error loading medicines</p>';
+        document.getElementById('medicinesList').innerHTML = '<p class="text-danger text-center">⚠️ Error loading medicines</p>';
     }
 }
 
@@ -282,13 +383,11 @@ function displayMedicines(medicines) {
     medicines.forEach(med => {
         html += `
             <div class="col-md-6 mb-3">
-                <div class="card border-0 bg-light">
-                    <div class="card-body p-3">
-                        <h6 class="card-title mb-1">${med.name}</h6>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-primary fw-bold">${med.price.toFixed(2)}Ks</span>
-                            <span class="text-muted small">Stock: ${med.stock}</span>
-                        </div>
+                <div class="medicine-card p-3">
+                    <h6 class="mb-2">${med.name}</h6>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="medicine-price">${med.price.toFixed(2)} Ks</span>
+                        <span class="badge bg-info">Stock: ${med.stock}</span>
                     </div>
                 </div>
             </div>
@@ -297,5 +396,15 @@ function displayMedicines(medicines) {
     html += '</div>';
     container.innerHTML = html;
 }
+// Ensure modal closes when navigating to all medicines
+document.addEventListener('DOMContentLoaded', function() {
+    const browseBtn = document.getElementById('browseAllMedicinesBtn');
+    if (browseBtn) {
+        browseBtn.addEventListener('click', function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('medicinesModal'));
+            if (modal) modal.hide();
+        });
+    }
+});
 </script>
 {% endblock %}

@@ -4,7 +4,7 @@ from datetime import datetime
 from database import get_database
 from auth import require_role
 from bson import ObjectId
-from utils import format_currency, is_medicine_expired, equirectangular_distance
+from utils import format_currency, equirectangular_distance
 from fastapi.templating import Jinja2Templates
 import requests
 
@@ -33,23 +33,23 @@ def geocode_address(address: str):
     return None, None
 
 
-def get_buyer_coordinates(db, buyer_profile):
+def get_buyer_coordinates(db, buyer_profile, force_update=False):
     """
     Return buyer coordinates.
-    - If already present → return them
-    - If missing → geocode from address → save → return
+    - If already present and force_update=False → return them
+    - If missing or force_update=True → geocode from address → save → return
     """
     coords = buyer_profile.get("coordinates")
-    if coords and coords.get("lat") and coords.get("lon"):
-        return coords["lat"], coords["lon"]
+    if coords and coords.get("latitude") is not None and coords.get("longitude") is not None and not force_update:
+        return coords["latitude"], coords["longitude"]
 
     address = buyer_profile.get("address")
     if address:
         lat, lon = geocode_address(address)
-        if lat and lon:
+        if lat is not None and lon is not None:
             db.buyer_profiles.update_one(
                 {"_id": buyer_profile["_id"]},
-                {"$set": {"coordinates": {"lat": lat, "lon": lon}}}
+                {"$set": {"coordinates": {"latitude": lat, "longitude": lon}}}
             )
             return lat, lon
     return None, None
@@ -116,7 +116,7 @@ async def buyer_medicines(request: Request, current_user: dict = Depends(require
             "is_expired": bool(med.get("expiration_date") and med["expiration_date"] < datetime.utcnow()),
             "expiration_date": (med.get("expiration_date").strftime("%Y-%m-%d") if med.get("expiration_date") else None),
             "pharmacy_name": (pharmacy.get("pharmacy_name") if pharmacy else "Unknown Pharmacy"),
-            "image_url": (f"/static/uploads/{med.get('image_filename')}" if med.get("image_filename") else None),
+            "image_url": (f"/static/images/medicines/{med.get('image_filename')}" if med.get("image_filename") else None),
         })
 
     available_count = sum(1 for m in medicines_data if (m["available"] or 0) > 0)
@@ -130,30 +130,6 @@ async def buyer_medicines(request: Request, current_user: dict = Depends(require
             "available_count": available_count,
         },
     )
-
-# -----------------------------
-# Utility: Get buyer coordinates
-# -----------------------------
-def get_buyer_coordinates(db, buyer_profile, force_update=False):
-    """
-    Return buyer coordinates.
-    - If already present and force_update=False → return them
-    - If missing or force_update=True → geocode from address → save → return
-    """
-    coords = buyer_profile.get("coordinates")
-    if coords and coords.get("latitude") is not None and coords.get("longitude") is not None and not force_update:
-        return coords["latitude"], coords["longitude"]
-
-    address = buyer_profile.get("address")
-    if address:
-        lat, lon = geocode_address(address)
-        if lat is not None and lon is not None:
-            db.buyer_profiles.update_one(
-                {"_id": buyer_profile["_id"]},
-                {"$set": {"coordinates": {"latitude": lat, "longitude": lon}}}
-            )
-            return lat, lon
-    return None, None
 
 
 # -----------------------------
@@ -174,7 +150,8 @@ def buyer_pharmacies(request: Request, current_user: dict = Depends(require_role
     for p in pharmacies:
         # Ensure required fields exist
         p["user_id"] = p.get("user_id", "")
-        p["medicine_count"] = p.get("medicine_count", 0)
+        # Dynamically count medicines for this pharmacy
+        p["medicine_count"] = db.Medicine.count_documents({"seller_id": p["user_id"]})
 
         coords = p.get("coordinates", {})
         plat = coords.get("latitude")
@@ -204,6 +181,21 @@ def buyer_pharmacies(request: Request, current_user: dict = Depends(require_role
     })
 
 
+# -----------------------------
+# API: Medicines per Pharmacy
+# -----------------------------
+@router.get("/api/pharmacy/{pharmacy_id}/medicines")
+def get_pharmacy_medicines(pharmacy_id: str):
+    db = get_database()
+    meds = list(db.Medicine.find({"seller_id": pharmacy_id}))
+    result = []
+    for med in meds:
+        result.append({
+            "name": med.get("name"),
+            "price": med.get("selling_price", 0),
+            "stock": med.get("stock", 0)
+        })
+    return result
 
 
 # -----------------------------
@@ -252,4 +244,3 @@ def update_buyer_profile(
     get_buyer_coordinates(db, buyer_profile, force_update=True)
 
     return RedirectResponse(url="/buyer/home", status_code=302)
-

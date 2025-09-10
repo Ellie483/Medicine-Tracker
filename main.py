@@ -1,3 +1,6 @@
+
+
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,6 +21,7 @@ from routes import (
     page_routes,
     notification_routes,  # must export `router`
 )
+
 from routes.init_routes import init_default_users
 
 # ---- db ----
@@ -76,3 +80,5 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+
