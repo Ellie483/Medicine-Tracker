@@ -622,6 +622,26 @@ async def update_medicine(
     return RedirectResponse(url="/seller/inventory", status_code=303)
     
 ####################################################################################
+def update_pharmacy_coordinates(db, pharmacy_profile, force_update=False):
+    """
+    Ensure pharmacy coordinates exist.
+    - If coordinates exist and force_update=False → return them
+    - If missing or force_update=True → geocode from address → save → return
+    """
+    coords = pharmacy_profile.get("coordinates")
+    if coords and coords.get("latitude") is not None and coords.get("longitude") is not None and not force_update:
+        return coords["latitude"], coords["longitude"]
+
+    address = pharmacy_profile.get("address")
+    if address:
+        lat, lon = geocode_address(address)
+        if lat is not None and lon is not None:
+            db.pharmacy_profiles.update_one(
+                {"_id": pharmacy_profile["_id"]},
+                {"$set": {"coordinates": {"latitude": lat, "longitude": lon}}}
+            )
+            return lat, lon
+    return None, None
 
 @router.get("/seller/profile-edit", response_class=HTMLResponse)
 def seller_profile_edit(request: Request, current_user: dict = Depends(require_role("seller"))):
@@ -668,6 +688,11 @@ def update_seller_profile(
     if description:
         update_data["description"] = description
 
+    # Update profile
     db.pharmacy_profiles.update_one({"user_id": current_user["_id"]}, {"$set": update_data})
+
+    # ✅ Force update coordinates if address changed
+    pharmacy_profile = db.pharmacy_profiles.find_one({"user_id": current_user["_id"]})
+    update_pharmacy_coordinates(db, pharmacy_profile, force_update=True)
 
     return RedirectResponse(url="/seller/home", status_code=302)
