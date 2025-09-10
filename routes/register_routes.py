@@ -1,38 +1,59 @@
-from fastapi import APIRouter, Request, Form
 
-# geocode_address for latitude and longitude
+
+from fastapi import APIRouter, Request, Form
 import requests
-def geocode_address(address):
-    """Geocode an address using OpenStreetMap Nominatim API."""
-    url = "https://nominatim.openstreetmap.org/search"
-    params = {
-        "q": address,
-        "format": "json",
-        "limit": 1
-    }
-    try:
-        response = requests.get(url, params=params, headers={"User-Agent": "MedicineTracker/1.0"}, timeout=5)
-        data = response.json()
-        if data:
-            return float(data[0]['lat']), float(data[0]['lon'])
-    except Exception:
-        pass
-    return None, None
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi import Request, Form, HTTPException, status
 from fastapi import Depends
-from typing import Optional
 from datetime import datetime
 from database import get_database
-from auth import get_password_hash
+from auth import get_password_hash, create_access_token
 from passlib.context import CryptContext
 from bson import ObjectId
-from auth import create_access_token  # Add this import
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+# -----------------------------
+# Password context
+# -----------------------------
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+# -----------------------------
+# Geocoding function
+# -----------------------------
+def geocode_address(address: str):
+    """
+    Return latitude and longitude for any real address.
+    If address is not real / cannot be found, returns None, None.
+    """
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": address,
+        "format": "json",
+        "limit": 1,  # Get the most relevant match
+        "addressdetails": 1
+    }
+    headers = {"User-Agent": "MedicineTracker/1.0"}
+    
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=5)
+        data = response.json()
+        if data and len(data) > 0:
+            lat = float(data[0]["lat"])
+            lon = float(data[0]["lon"])
+            return lat, lon
+    except Exception as e:
+        print("Geocoding error:", e)
+    
+    return None, None
+
+# -----------------------------
+# Registration routes
+# -----------------------------
 @router.get("/register", response_class=RedirectResponse)
 def register_role_selection(request: Request):
     return templates.TemplateResponse("register_role_selection.html", {"request": request})
@@ -45,6 +66,9 @@ def register_buyer_form(request: Request):
 def register_seller_form(request: Request):
     return templates.TemplateResponse("register_seller.html", {"request": request})
 
+# -----------------------------
+# Buyer registration
+# -----------------------------
 @router.post("/register/buyer")
 def register_buyer(
     request: Request,
@@ -55,11 +79,20 @@ def register_buyer(
     address: str = Form(...)
 ):
     db = get_database()
-    existing_user = db.users.find_one({"username": username})
-    if existing_user:
+    
+    if db.users.find_one({"username": username}):
         return templates.TemplateResponse("register_buyer.html", {
             "request": request,
             "error": "Username already exists. Please choose a different username."
+        })
+
+    # Geocode the address
+    lat, lon = geocode_address(address)
+    
+    if lat is None or lon is None:
+        return templates.TemplateResponse("register_buyer.html", {
+            "request": request,
+            "error": "The address you entered could not be validated. Please enter a real address."
         })
 
     user_data = {
@@ -76,14 +109,17 @@ def register_buyer(
         "name": name,
         "age": age,
         "address": address,
-        "coordinates": None,
+        "coordinates": {"latitude": lat, "longitude": lon},
         "favorite_pharmacies": [],
         "created_at": datetime.utcnow()
     }
     db.buyer_profiles.insert_one(buyer_profile_data)
+
     return RedirectResponse(url="/?registered=buyer", status_code=302)
 
-
+# -----------------------------
+# Seller registration
+# -----------------------------
 @router.post("/register/seller")
 def register_seller(
     request: Request,
@@ -94,8 +130,9 @@ def register_seller(
     contact_info: str = Form(...),
     address: str = Form(...),
     operating_hours: str = Form(...)
-): 
+):
     db = get_database()
+
     if db.users.find_one({"username": username}):
         return templates.TemplateResponse("register_seller.html", {
             "request": request,
@@ -108,6 +145,15 @@ def register_seller(
             "error": "License number already exists. Please check your license number."
         })
 
+    # Geocode the address
+    lat, lon = geocode_address(address)
+    
+    if lat is None or lon is None:
+        return templates.TemplateResponse("register_seller.html", {
+            "request": request,
+            "error": "The address you entered could not be validated. Please enter a real address."
+        })
+
     user_data = {
         "username": username,
         "password": get_password_hash(password),
@@ -117,33 +163,23 @@ def register_seller(
     }
     user_result = db.users.insert_one(user_data)
 
-    # Geocode the address to get latitude and longitude
-    lat, lon = geocode_address(address)
     pharmacy_profile_data = {
         "user_id": str(user_result.inserted_id),
         "pharmacy_name": pharmacy_name,
         "license_number": license_number,
         "contact_info": contact_info,
         "address": address,
-        "latitude": lat,     #latitude
-        "longitude": lon,    #longitude
+        "coordinates": {"latitude": lat, "longitude": lon},
         "operating_hours": operating_hours,
         "created_at": datetime.utcnow()
     }
     db.pharmacy_profiles.insert_one(pharmacy_profile_data)
+
     return RedirectResponse(url="/?registered=seller", status_code=302)
 
-
-# Password context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-
+# -----------------------------
+# Login route
+# -----------------------------
 @router.post("/login")
 async def login(
     request: Request,
@@ -162,7 +198,6 @@ async def login(
             "error": "Invalid credentials"
         })
 
-    # ✅ Save user info into session
     request.session["user"] = {
         "username": user["username"],
         "role": user["role"],
@@ -172,7 +207,6 @@ async def login(
     
     print(f"✅ User session created for {username} with role {user['role']}")
 
-    # ✅ Redirect based on role
     if user["role"] == "buyer":
         print("➡️ Redirecting buyer to /buyer/home")
         return RedirectResponse(url="/buyer/home", status_code=302)
@@ -188,10 +222,12 @@ async def login(
             "error": "Unknown user role"
         })
 
+# -----------------------------
+# Logout route
+# -----------------------------
 @router.get("/logout")
 async def logout(request: Request):
     print("🚪 Logging out user:", request.session.get("user", {}).get("username"))
     request.session.clear()
     print("✅ Session cleared")
     return RedirectResponse(url="/")
-

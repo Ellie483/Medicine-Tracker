@@ -2,103 +2,132 @@
 
 {% block title %}Home - Medicine Tracker{% endblock %}
 
-
-
-
 {% block content %}
 <style>
+:root{
+  --ref-deep:#0e8a83;   /* deep teal */
+  --ref-teal:#16c2b3;   /* bright teal */
+  --ref-mint:#c8f3ea;   /* pale mint */
+  --ink:#0c1b1c;
+  --line:#e6efee;
+  --danger:#dc3545;
+}
+
 body.home-bg {
     background: url('/static/images/background11.png') no-repeat center center fixed;
     background-size: cover;
-    background-color: #f5f6fa;
+    background-color: var(--ref-mint);
     min-height: 100vh;
 }
+
+.welcome-home {
+    text-align: left;
+    background: transparent; /* removed white background */
+    border-radius: 18px;
+    box-shadow: none; /* removed shadow */
+    padding: 2.5rem 2.8rem 1.7rem 2.8rem;
+    margin-bottom: 2.2rem;
+    max-width: 700px;
+    animation: fadeIn 1.2s cubic-bezier(.4,0,.2,1);
+}
+
+.welcome-home h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--ref-deep);
+    margin-bottom: 0.7rem;
+    letter-spacing: 0.5px;
+}
+
+.welcome-home p {
+    font-size: 1.18rem;
+    color: #000; /* change to white for visibility over background */
+    margin-bottom: 0.5rem;
+}
+
+.welcome-home .sub {
+    color: #000; /* softer mint color for subtitle */
+    font-size: 1.05rem;
+}
+
+.main-btns-home {
+    display: flex;
+    gap: 2.5rem;
+    justify-content: flex-start; /* moved to left */
+    margin-top: 0.5rem;
+}
+
+.main-btns-home a.btn {
+    border-radius: 2rem;
+    box-shadow: 0 2px 12px 0 rgba(60, 120, 200, 0.10);
+    transition: background 0.2s, color 0.2s, transform 0.18s;
+    min-width: 210px;
+    font-size: 1.22rem;
+    padding: 0.85rem 2.2rem;
+}
+
+.main-btns-home a.btn-primary {
+    background-color: var(--ref-teal);
+    color: #fff;
+    border: none;
+}
+
+.main-btns-home a.btn-primary:hover {
+    background-color: var(--ref-deep);
+    transform: translateY(-2px) scale(1.04);
+}
+
+.main-btns-home a.btn-info {
+    background-color: var(--ref-deep);
+    color: #fff;
+    border: none;
+}
+
+.main-btns-home a.btn-info:hover {
+    background-color: var(--ref-teal);
+    transform: translateY(-2px) scale(1.04);
+}
+
+@media (max-width: 900px) {
+    .welcome-home, .main-btns-home { margin-right: 0; max-width: 100%; }
+    .main-btns-home { flex-direction: column; align-items: flex-end; gap: 1.2rem; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 </style>
+
 <script>
 document.body.classList.add('home-bg');
 </script>
-<div class="container-fluid" style="margin-top:0; padding-top:0;">
-    
 
-    
-        <style>
-        .welcome-home {
-            text-align: left;
-            background: transparent;
-            border-radius: 18px;
-            box-shadow: none;
-            padding: 2.5rem 2.8rem 1.7rem 2.8rem;
-            margin-bottom: 2.2rem;
-            margin-right: 5vw;
-            max-width: 700px;
-            animation: fadeIn 1.2s cubic-bezier(.4,0,.2,1);
-        }
-        .welcome-home h2 {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: #2a4d8f;
-            margin-bottom: 0.7rem;
-            letter-spacing: 0.5px;
-        }
-        .welcome-home p {
-            font-size: 1.18rem;
-            color: #3a3a3a;
-            margin-bottom: 0.5rem;
-        }
-        .welcome-home .sub {
-            color: #5a6c7d;
-            font-size: 1.05rem;
-        }
-        .main-btns-home {
-            display: flex;
-            gap: 2.5rem;
-            justify-content: flex-end;
-            margin-right: 5vw;
-            margin-top: 0.5rem;
-        }
-        .main-btns-home a.btn {
-            border-radius: 2rem;
-            box-shadow: 0 2px 12px 0 rgba(60, 120, 200, 0.10);
-            transition: background 0.2s, color 0.2s, transform 0.18s;
-            min-width: 210px;
-            font-size: 1.22rem;
-            padding: 0.85rem 2.2rem;
-        }
-        .main-btns-home a.btn-primary:hover {
-            background: #1e3a6b;
-            color: #fff;
-            transform: translateY(-2px) scale(1.04);
-        }
-        .main-btns-home a.btn-info:hover {
-            background: #2a4d8f;
-            color: #fff;
-            transform: translateY(-2px) scale(1.04);
-        }
-        @media (max-width: 900px) {
-            .welcome-home, .main-btns-home { margin-right: 0; max-width: 100%; }
-            .main-btns-home { flex-direction: column; align-items: flex-end; gap: 1.2rem; }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        </style>
-    <div style="display: flex; flex-direction: column; align-items: flex-end; margin-top: 40px;">
-            <div class="welcome-home">
-                <h2 style="white-space:nowrap; text-align:left; margin-left:-0px; font-size:2.4rem;"><i class="fas fa-capsules me-2"></i>Medicine Availability Checker</h2>
-                <p style="text-align:left; margin-left: 60px;">Quickly check the availability of medicines and nearby pharmacies in your area. Stay informed and manage your health with ease.</p>
-                <div class="sub" style="text-align:left;margin-left: 60px;">Your health, our priority.</div>
+<div class="container-fluid" style="margin-top:0; padding-top:0;">
+    <div class="d-flex flex-wrap align-items-center" style="margin-top:40px; gap:2rem;">
+        <!-- Icon on the left -->
+        <div>
+            <img src="/static/images/icon2.png" alt="Medicine Icon" style="width:400px; height:auto;">
+        </div>
+
+        <!-- Welcome section -->
+        <div class="welcome-home">
+            <h2 style="white-space:nowrap;"><i class="fas fa-capsules me-2"></i>Medicine Availability Checker</h2>
+            <p>Quickly check the availability of medicines and nearby pharmacies in your area. Stay informed and manage your health with ease.</p>
+            <div class="sub">Your health, our priority.</div>
+
+            <!-- Moved buttons inside welcome-home -->
+            <div class="main-btns-home" style="margin-top:1.5rem;">
+                <a href="/buyer/medicines" class="btn btn-primary btn-lg d-flex align-items-center justify-content-center">
+                    <i class="fas fa-search me-2"></i>Browse Medicines
+                </a>
+                <a href="/buyer/pharmacies" class="btn btn-info btn-lg d-flex align-items-center justify-content-center">
+                    <i class="fas fa-map-marker-alt me-2"></i>Find Pharmacies
+                </a>
             </div>
         </div>
-    <div class="main-btns-home" style="margin-left:0; margin-right:9vw; margin-top: 0; justify-content:flex-end;">
-            <a href="/buyer/medicines" class="btn btn-primary btn-lg d-flex align-items-center justify-content-center" style="min-width: 180px; font-size: 1.1rem;">
-                <i class="fas fa-search me-2"></i>Browse Medicines
-            </a>
-            <a href="/buyer/pharmacies" class="btn btn-info btn-lg text-white d-flex align-items-center justify-content-center" style="min-width: 180px; font-size: 1.1rem;">
-                <i class="fas fa-map-marker-alt me-2"></i>Find Pharmacies
-            </a>
-        </div>
-
-
+    </div>
 </div>
+
+
 {% endblock %}

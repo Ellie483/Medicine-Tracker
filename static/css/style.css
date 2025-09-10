@@ -1,13 +1,24 @@
 /* Custom styles for Medicine Availability Tracker */
 
 :root{
-    --brand-900:#0b6b65;   /* deep teal */
-    --brand-700:#11988f;   /* teal */
-    --brand-500:#17b9ad;   /* mint teal */
-    --brand-100:#e9fbf7;   /* pale mint */
-    --ink:#0c1b1c;
-    --white:#fff;
-  }
+  --ref-deep:#0e8a83;   /* deep teal */
+  --ref-teal:#16c2b3;   /* bright teal */
+  --ref-mint:#c8f3ea;   /* pale mint */
+  --ink:#0c1b1c;
+  --line:#e6efee;
+  --danger:#dc3545;
+}
+
+/* =========================
+   PAGE BACKGROUND (no min-height)
+   ========================= */
+html, body{
+  height:100%;
+  background: linear-gradient(180deg, var(--ref-mint) 0%, #ffffff 100%) !important;
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: inherit;
+}
 .app-navbar {
     background: linear-gradient(90deg, var(--ref-deep), var(--ref-teal));
     border-bottom: 1px solid rgba(0,0,0,.06);
