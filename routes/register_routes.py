@@ -287,35 +287,101 @@ def register_buyer_form(request: Request):
 # -----------------------------
 # Buyer registration
 # -----------------------------
+# @router.post("/register/buyer")
+# def register_buyer(
+#     request: Request,
+#     username: str = Form(...),
+#     password: str = Form(...),
+#     phone: str = Form(...),
+#     township: str = Form(...),
+#     address: str = Form(...)
+# ):
+#     db = get_database()
+#     print("📌 Connected DB:", db.name)   # Debug database name
+
+#     if db.users.find_one({"username": username}):
+#         print("❌ Username exists:", username)
+#         return templates.TemplateResponse("register_buyer.html", {
+#             "request": request,
+#             "error": "Username already exists."
+#         })
+
+#     township, lat, lon = geocode_address(address)
+#     if not township:
+#         print("❌ Invalid township:", address)
+#         return templates.TemplateResponse("register_buyer.html", {"request": request, "error": "Invalid township"})
+
+#     user_data = {
+#         "username": username,
+#         "password": get_password_hash(password),
+#         "role": "buyer",
+#         "is_profile_complete": True,
+#         "created_at": datetime.utcnow()
+#     }
+#     user_result = db.users.insert_one(user_data)
+#     print("✅ User inserted with ID:", user_result.inserted_id)
+
+#     buyer_profile_data = {
+#         "user_id": str(user_result.inserted_id),
+#         "username": username,
+#         "phone": phone,
+#         "address": address,
+#         "township": township,
+#         "coordinates": {"latitude": lat, "longitude": lon} if lat and lon else {},
+#         "favorite_pharmacies": [],
+#         "created_at": datetime.utcnow()
+#     }
+#     profile_result = db.buyer_profiles.insert_one(buyer_profile_data)
+#     print("✅ Buyer profile inserted with ID:", profile_result.inserted_id)
+
+#     return RedirectResponse(url="/?registered=buyer", status_code=302)
 @router.post("/register/buyer")
 def register_buyer(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
-    name: str = Form(...),
-    age: int = Form(...),
-    address: str = Form(...),
+    phone: str = Form(...),
+    township: str = Form(...),
+    address: str = Form(...)
 ):
     db = get_database()
+    print("📌 Connected DB:", db.name)   # Debug database name
+
+    # Check if username exists
     if db.users.find_one({"username": username}):
+        print("❌ Username exists:", username)
+        # Pass back the submitted values so the form stays filled
         return templates.TemplateResponse("register_buyer.html", {
             "request": request,
-            "error": "Username already exists."
+            "error": "Username already exists. Please choose another.",
+            "username": username,
+            "phone": phone,
+            "township": township,
+            "address": address,
+            "townships": MYANMAR_TOWNSHIPS  # pass the dropdown list
         })
 
-    township, lat, lon = geocode_address(address)
-    if not township:
-        return templates.TemplateResponse("register_buyer.html", {"request": request, "error": "Address must include a valid Myanmar township."})
-
-    user_data = {"username": username, "password": get_password_hash(password), "role": "buyer", "is_profile_complete": True, "created_at": datetime.utcnow()}
+    # Proceed with registration if username is unique
+    hashed_password = get_password_hash(password)
+    user_data = {
+        "username": username,
+        "password": hashed_password,
+        "role": "buyer",
+        "is_profile_complete": True,
+        "created_at": datetime.utcnow()
+    }
     user_result = db.users.insert_one(user_data)
+    print("✅ User inserted with ID:", user_result.inserted_id)
+
+    # Geocode address after confirming username is unique
+    normalized_township, lat, lon = geocode_address(address)
 
     buyer_profile_data = {
         "user_id": str(user_result.inserted_id),
-        "name": name,
-        "age": age,
+        "username": username,
+        "phone": phone,
         "address": address,
-        "township": township,
+        "township": normalized_township or township,
         "coordinates": {"latitude": lat, "longitude": lon} if lat and lon else {},
         "favorite_pharmacies": [],
         "created_at": datetime.utcnow()
@@ -323,6 +389,9 @@ def register_buyer(
     db.buyer_profiles.insert_one(buyer_profile_data)
 
     return RedirectResponse(url="/?registered=buyer", status_code=302)
+
+
+
 
  
 
