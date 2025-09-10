@@ -52,7 +52,7 @@ async def seller_home(request: Request, current_user: dict = Depends(require_rol
         
         # 1. Get pharmacy profile for this seller using user_id
         pharmacy_profile = db.pharmacy_profiles.find_one({
-            "user_id": ObjectId(current_user["id"])  # Convert string to ObjectId
+            "user_id": current_user["id"]  # Convert string to ObjectId
         })
         
         if not pharmacy_profile:
