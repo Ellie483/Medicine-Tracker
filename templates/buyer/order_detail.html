@@ -273,6 +273,25 @@
               <label class="form-label">Payment ID / Reference</label>
               <input name="payment_id" class="form-control" required>
             </div>
+            {# --- QR section (shown if the pharmacy has a QR saved) --- #}
+            {% if order.pharmacy_qr_url %}
+              <div class="text-center mb-3">
+                <img src="{{ order.pharmacy_qr_url }}"
+                     alt="Pharmacy QR Code"
+                     class="img-fluid rounded shadow-sm"
+                     style="max-width: 220px;">
+                {% if order.pharmacy_instructions %}
+                  <p class="small text-muted mt-2">{{ order.pharmacy_instructions }}</p>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="alert alert-warning small mb-4">
+                <i class="fas fa-qrcode me-1"></i>
+                Payment QR is not available for this pharmacy yet. You can still pay and upload proof.
+              </div>
+            {% endif %}
+            
+
             <div class="col-md-6">
               <label class="form-label">Payment Proof (Image/PDF)</label>
               <input type="file" name="file" class="form-control" accept="image/*,application/pdf" required>
@@ -471,7 +490,15 @@
     color:var(--ref-deep)!important;
     font-weight:600;
   }
-
+/* QR presentation */
+.qr-box .qr-img{
+  max-width: 220px;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(14,138,131,.18);
+  box-shadow: 0 8px 18px rgba(14,138,131,.12);
+}
   /* ====== Modal Theming ====== */
   #submitPaymentModal .modal-dialog{max-width:820px;}
   #submitPaymentModal .modal-content{
