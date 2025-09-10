@@ -848,6 +848,7 @@ def buyer_order_detail(
     db = get_database()
     tz = _user_tz(request, db, current_user)
 
+    # --- Load order ---
     try:
         oid = _to_oid(order_id)
     except Exception:
@@ -857,22 +858,65 @@ def buyer_order_detail(
     if not o:
         raise HTTPException(404, "Order not found")
 
+    # --- Items & totals ---
     ship = _extract_shipping(o)
     items = []
     for it in (o.get("items") or []):
         q = int(it.get("quantity", 0) or 0)
         p_sell = float(it.get("price", 0) or 0.0)
-        items.append({"medicine_name": it.get("medicine_name", "Unknown"), "quantity": q, "price": p_sell, "line_total": q * p_sell})
+        items.append({
+            "medicine_name": it.get("medicine_name", "Unknown"),
+            "quantity": q,
+            "price": p_sell,
+            "line_total": q * p_sell
+        })
 
     total_amount = o.get("total_amount")
     if total_amount is None:
         total_amount = sum(x["line_total"] for x in items)
 
-    resolved_name = o.get("pharmacy_name") or _lookup_pharmacy_name(db, o.get("pharmacy_id") or o.get("seller_id"))
+    # --- Resolve pharmacy display name on the order (once) ---
+    resolved_name = o.get("pharmacy_name") or _lookup_pharmacy_name(
+        db, o.get("pharmacy_id") or o.get("seller_id")
+    )
     if resolved_name and resolved_name != o.get("pharmacy_name"):
-        db.Orders.update_one({"_id": o["_id"]}, {"$set": {"pharmacy_name": resolved_name, "updated_at": _now()}})
-    logger.info(f"[buyer_detail] order={o.get('_id')} pid={o.get('pharmacy_id') or o.get('seller_id')} name={resolved_name}")
+        db.Orders.update_one(
+            {"_id": o["_id"]},
+            {"$set": {"pharmacy_name": resolved_name, "updated_at": _now()}}
+        )
 
+    pid = o.get("pharmacy_id") or o.get("seller_id")
+    logger.info(
+        "[buyer_detail] order=%s pid=%s name=%s",
+        o.get("_id"), pid, resolved_name
+    )
+
+    # --- Fetch pharmacy profile robustly (for QR) ---
+    pharmacy_profile = None
+    if pid:
+        # Try as profile _id
+        try:
+            pharmacy_profile = db.pharmacy_profiles.find_one({"_id": _to_oid(pid)})
+        except Exception:
+            pharmacy_profile = None
+
+        # If not found, try matching the user_id field as a string
+        if not pharmacy_profile:
+            # pid could be ObjectId or str; normalize to str for user_id
+            pid_str = str(pid)
+            pharmacy_profile = db.pharmacy_profiles.find_one({"user_id": pid_str})
+
+    # Pull QR/instructions if present
+    pharmacy_qr_url = (pharmacy_profile or {}).get("payment_qr_url")
+    payment_instructions = (pharmacy_profile or {}).get("payment_instructions")
+
+    logger.info(
+        "[buyer_detail] qr_found=%s instr_found=%s profile_id=%s",
+        bool(pharmacy_qr_url), bool(payment_instructions),
+        (str(pharmacy_profile.get('_id')) if pharmacy_profile else None)
+    )
+
+    # --- Build template model (put QR fields INSIDE order) ---
     order = {
         "_id": str(o["_id"]),
         "created_at": o.get("created_at"),
@@ -883,7 +927,7 @@ def buyer_order_detail(
         "payment": {
             "payment_id": (o.get("payment") or {}).get("payment_id"),
             "receipt_path": (o.get("payment") or {}).get("receipt_path"),
-            "seller_receipt_path": (o.get("payment") or {}).get("seller_receipt_path"), 
+            "seller_receipt_path": (o.get("payment") or {}).get("seller_receipt_path"),
             "seller_receipt_sent_at": (o.get("payment") or {}).get("seller_receipt_sent_at"),
             "rejected_reason": (o.get("payment") or {}).get("rejected_reason"),
             "uploaded_at": (o.get("payment") or {}).get("uploaded_at"),
@@ -894,9 +938,17 @@ def buyer_order_detail(
         "ship_to": {"address": ship["address"], "city": ship["city"]},
         "formatted_total": o.get("formatted_total") or format_currency(total_amount),
         "timeline": o.get("timeline", []),
+
+        # >>> These two are what your template reads <<<
+        "pharmacy_qr_url": pharmacy_qr_url,
+        "pharmacy_instructions": payment_instructions,
     }
 
-    return templates.TemplateResponse("buyer/order_detail.html", {"request": request, "order": order, "current_user": current_user})
+    return templates.TemplateResponse(
+        "buyer/order_detail.html",
+        {"request": request, "order": order, "current_user": current_user}
+    )
+
 
 @router.post("/buyer/orders/{order_id}/submit_and_upload")
 async def buyer_submit_and_upload(
