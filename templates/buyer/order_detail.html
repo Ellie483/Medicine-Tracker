@@ -1,0 +1,693 @@
+{% extends "base.html" %}
+{% block title %}Order Details · Medicine Tracker{% endblock %}
+
+{% macro status_chip(s) -%}
+  {% set s = (s or 'cart')|lower %}
+  {% if s == 'delivered' %}
+    <span class="badge badge-green"><i class="fas fa-box-open me-1"></i>Delivered</span>
+  {% elif s == 'confirmed' %}
+    <span class="badge badge-green"><i class="fas fa-check me-1"></i>Confirmed</span>
+  {% elif s == 'pending' %}
+    <span class="badge badge-green"><i class="fas fa-clock me-1"></i>Pending</span>
+  {% else %}
+    <span class="badge badge-green"><i class="fas fa-shopping-basket me-1"></i>Cart</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro payment_chip(s) -%}
+  {% set s = (s or 'unpaid')|lower %}
+  {% if s == 'paid' %}
+    <span class="badge badge-green"><i class="fas fa-check me-1"></i>Paid</span>
+  {% elif s == 'proof_uploaded' %}
+    <span class="badge badge-green"><i class="fas fa-hourglass-half me-1"></i>Under Review</span>
+  {% elif s == 'rejected' %}
+    <span class="badge badge-green"><i class="fas fa-times me-1"></i>Proof Rejected</span>
+  {% else %}
+    <span class="badge badge-green"><i class="fas fa-credit-card me-1"></i>Pending Payment</span>
+  {% endif %}
+{%- endmacro %}
+
+{% block content %}
+<div class="container-xxl py-3">
+
+  <!-- top bar: back + chips (total removed) -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <a href="/buyer/orders" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-arrow-left me-1"></i>Back to Orders
+    </a>
+    <div class="d-flex gap-2">
+      {{ status_chip(order.order_status or order.status) }}
+      {{ payment_chip(order.payment_status) }}
+    </div>
+  </div>
+
+  {# ---------- ROW 1: ITEMS (left) + PHARMACY & PAYMENT (right) ---------- #}
+  <div class="row g-4 align-items-stretch">
+
+    <!-- LEFT: Order Items -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="text-muted">
+              <i class="fas fa-calendar me-1"></i>{{ order.created_at_str or order.created_at or '—' }}
+            </div>
+            <div class="fw-semibold break-any">Order #{{ order._id }}</div>
+          </div>
+          <hr>
+          <h4 class="h6"><i class="fas fa-pills me-2 text-primary"></i>Order Items</h4>
+
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Medicine</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-end">Price</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+            
+              <tbody id="orderBody">
+                {% for it in order.get('items', []) %}
+                  {# robust mid: fallback to _id or name (string) to avoid empty ids in DOM #}
+                  {% set mid = (it.medicine_id or it._id or it.medicine_name)|string %}
+                  <tr id="row-{{ mid }}">
+                    <td class="break-any">{{ it.medicine_name }}</td>
+              
+                    <td class="text-center">
+                      <div class="qty-wrap" data-med="{{ mid }}" data-price="{{ '%.2f'|format(it.price or 0) }}">
+                        <button type="button" class="btn btn-sm btn-outline-secondary qty-btn"
+                                onclick="changeQty('{{ order._id|string }}','{{ mid }}',-1)">
+                          <i class="fas fa-minus"></i>
+                        </button>
+                        <span class="qty-num" id="qty-{{ mid }}">{{ it.quantity }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary qty-btn"
+                                onclick="changeQty('{{ order._id|string }}','{{ mid }}',1)">
+                          <i class="fas fa-plus"></i>
+                        </button>
+                      </div>
+                    </td>
+              
+                    <td class="text-end"><span id="price-{{ mid }}">{{ '%.2f'|format(it.price or 0) }}</span></td>
+                    <td class="text-end"><span id="line-{{ mid }}">{{ '%.2f'|format((it.quantity or 0) * (it.price or 0)) }}</span></td>
+                  </tr>
+                {% else %}
+                  <tr id="emptyRow"><td colspan="4" class="text-center text-muted">No items</td></tr>
+                {% endfor %}
+              </tbody>
+              
+              
+              <tfoot class="table-light">
+                <tr>
+                  <th colspan="3" class="text-end">Order Total</th>
+                  <th class="text-end" id="orderTotal">{{ order.formatted_total }}</th>
+                </tr>
+              </tfoot>
+              
+            
+              
+            </table>
+            
+            
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Pharmacy + Payment (stacked) -->
+    <div class="col-lg-4 d-flex flex-column gap-3">
+      <!-- Pharmacy -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h4 class="h6 mb-2"><i class="fas fa-store me-2 text-info"></i>Pharmacy</h4>
+          <div class="fw-semibold break-any">{{ order.pharmacy_name or '—' }}</div>
+          {% set addr = order.pharmacy_address %}
+          {% if addr %}
+            {% if addr is mapping %}
+              <div class="text-muted small break-any mt-1">
+                <i class="fas fa-location-dot me-1"></i>
+                {{ addr.address }}{% if addr.city %}, {{ addr.city }}{% endif %}
+              </div>
+            {% else %}
+              <div class="text-muted small break-any mt-1">
+                <i class="fas fa-location-dot me-1"></i>{{ addr }}
+              </div>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Payment (unchanged) -->
+      <div id="payment" class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h4 class="h6 mb-2"><i class="fas fa-credit-card me-2 text-warning"></i>Payment</h4>
+          <div class="mb-2">{{ payment_chip(order.payment_status) }}</div>
+
+          {% set cur = (order.order_status or order.status or 'cart')|lower %}
+
+          {% if cur in ['cart','pending'] and (order.payment_status or 'unpaid') in ['unpaid','rejected'] %}
+            {% if order.payment_status == 'rejected' and order.payment and order.payment.rejected_reason %}
+              <div class="alert alert-danger small py-2 mb-2 break-any">
+                <i class="fas fa-circle-exclamation me-1"></i>Rejected: {{ order.payment.rejected_reason }}
+              </div>
+            {% endif %}
+            <button class="btn btn-success w-100" id="openSubmitModalBtn">
+              <i class="fas fa-paper-plane me-1"></i>Submit Order
+            </button>
+            {% set can_cancel = (cur in ['cart','pending']) and (order.payment_status in ['unpaid','rejected']) %}
+
+{% if can_cancel %}
+<form method="post" action="/buyer/orders/{{ order._id }}/cancel" class="mt-2">
+  <button class="btn btn-outline-danger w-100">
+    <i class="fas fa-ban me-1"></i>Cancel Order
+  </button>
+</form>
+{% endif %}
+
+
+          {% elif order.payment_status == 'proof_uploaded' %}
+            <div class="alert alert-info small mb-0">
+              <i class="fas fa-hourglass-half me-1"></i>Payment under review.
+            </div>
+            {% if order.payment and order.payment.receipt_path %}
+              <a class="btn btn-outline-secondary btn-sm mt-2 w-100"
+                 href="{{ order.payment.receipt_path }}" target="_blank">
+                <i class="fas fa-file-image me-1"></i>View Uploaded Proof
+              </a>
+            {% endif %}
+
+            {% elif order.payment_status == 'paid' %}
+            {% set sent = order.payment and order.payment.seller_receipt_sent_at %}
+            {% if sent and order.payment.seller_receipt_path %}
+              <a class="btn btn-outline-success w-100" id="downloadVoucherBtn"
+                 href="{{ order.payment.seller_receipt_path }}" target="_blank" rel="noopener">
+                <i class="fas fa-download me-1"></i>Download Voucher
+              </a>
+              {% if order.payment.receipt_path %}
+                <a class="btn btn-outline-secondary btn-sm mt-2 w-100"
+                   href="{{ order.payment.receipt_path }}" target="_blank" rel="noopener">
+                  <i class="fas fa-file-image me-1"></i>View Payment Proof
+                </a>
+              {% endif %}
+            {% else %}
+              <div class="alert alert-light border small mb-0">
+                <i class="fas fa-check text-success me-1"></i>Payment confirmed.
+                The pharmacy receipt will be available soon.
+              </div>
+              {% if order.payment and order.payment.receipt_path %}
+                <a class="btn btn-outline-secondary btn-sm mt-2 w-100"
+                   href="{{ order.payment.receipt_path }}" target="_blank" rel="noopener">
+                  <i class="fas fa-file-image me-1"></i>View Uploaded Proof
+                </a>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ---------- ROW 2: FULL-WIDTH ORDER PROGRESS ---------- #}
+  {% set steps = ['cart','pending','confirmed','delivered'] %}
+  {% set cur = (order.order_status or order.status or 'cart')|lower %}
+  {% set idx = steps.index(cur) if cur in steps else 0 %}
+
+  <div class="row g-4 mt-0">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h4 class="h6 mb-3"><i class="fas fa-route me-2 text-secondary"></i>Order Progress</h4>
+          <ol class="order-stepper" data-step="{{ idx }}">
+            <li class="step {{ 'is-done' if idx >= 0 }}">
+              <div class="dot"><i class="fas fa-shopping-basket"></i></div>
+              <span>Cart</span>
+            </li>
+            <li class="step {{ 'is-done' if idx >= 1 }} {{ 'is-current' if idx == 1 }}">
+              <div class="dot"><i class="fas fa-clock"></i></div>
+              <span>Pending</span>
+            </li>
+            <li class="step {{ 'is-done' if idx >= 2 }} {{ 'is-current' if idx == 2 }}">
+              <div class="dot"><i class="fas fa-check"></i></div>
+              <span>Confirmed</span>
+            </li>
+            <li class="step {{ 'is-done' if idx >= 3 }} {{ 'is-current' if idx == 3 }}">
+              <div class="dot"><i class="fas fa-box-open"></i></div>
+              <span>Delivered</span>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ---------- Submit Order Modal (unchanged) ---------- #}
+  <div class="modal fade" id="submitPaymentModal" tabindex="-1" aria-labelledby="submitPaymentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <form class="modal-content" method="post" action="/buyer/orders/{{ order._id }}/submit_and_upload"
+            enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title" id="submitPaymentLabel">
+            <i class="fas fa-paper-plane me-2"></i>Submit Order & Upload Payment
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- form fields ... (same as before) -->
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="form-text">Order ID</div>
+              <div class="fw-semibold break-any">{{ order._id }}</div>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Address</label>
+              <input name="address_line" class="form-control" placeholder="Street / House / Block" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">City</label>
+              <input name="city" class="form-control" placeholder="Your city" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Payment ID / Reference</label>
+              <input name="payment_id" class="form-control" required>
+            </div>
+            {# --- QR section (shown if the pharmacy has a QR saved) --- #}
+            {% if order.pharmacy_qr_url %}
+              <div class="text-center mb-3">
+                <img src="{{ order.pharmacy_qr_url }}"
+                     alt="Pharmacy QR Code"
+                     class="img-fluid rounded shadow-sm"
+                     style="max-width: 220px;">
+                {% if order.pharmacy_instructions %}
+                  <p class="small text-muted mt-2">{{ order.pharmacy_instructions }}</p>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="alert alert-warning small mb-4">
+                <i class="fas fa-qrcode me-1"></i>
+                Payment QR is not available for this pharmacy yet. You can still pay and upload proof.
+              </div>
+            {% endif %}
+            
+
+            <div class="col-md-6">
+              <label class="form-label">Payment Proof (Image/PDF)</label>
+              <input type="file" name="file" class="form-control" accept="image/*,application/pdf" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary"><i class="fas fa-check me-1"></i>Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="centerNotice" role="dialog" aria-modal="true" aria-hidden="true" hidden>
+  <div class="panel">
+    <div class="fs-6 fw-semibold mb-2" id="cn-title">
+      <i class="fas fa-circle-info me-1 text-warning"></i> Heads up
+    </div>
+    <div class="text-muted" id="cn-body">
+      This order can’t be edited anymore (already confirmed/paid).
+    </div>
+    <div class="mt-3 d-flex justify-content-end gap-2">
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="hideCenterNotice()">OK</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+  html, body {
+  height: 100%; /* let html stretch to full viewport */
+  background: linear-gradient(180deg, var(--ref-mint) 0%, #ffffff 100%) !important;
+  background-attachment: fixed;
+}
+
+
+  /* ====== Base ====== */
+  #centerNotice[hidden]{display:none;}
+  #centerNotice{
+    position:fixed;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.35);z-index:1060;padding:1rem;
+  }
+  #centerNotice .panel{
+    background:#fff;border-radius:12px;
+    box-shadow:0 0.75rem 1.25rem rgba(0,0,0,.15);
+    max-width:420px;width:92%;padding:18px 20px;text-align:center;
+  }
+
+  .card,.table,.badge,.form-control{font-size:1rem;}
+  .break-any{word-break:break-word;overflow-wrap:anywhere;}
+
+  /* Stepper */
+  .order-stepper{display:flex;justify-content:space-between;list-style:none;padding:0;margin:0;position:relative;}
+  .order-stepper .step{flex:1;text-align:center;position:relative;padding:0 .25rem;}
+  .order-stepper .step:not(:last-child)::after{
+    content:"";position:absolute;left:50%;right:-50%;top:18px;height:4px;background:#e9ecef;z-index:1;
+  }
+  .order-stepper .dot{
+    width:36px;height:36px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:#e9ecef;color:#6c757d;z-index:2;position:relative;
+    box-shadow:0 0 0 2px #fff inset;
+  }
+  .order-stepper .step span{display:block;margin-top:.5rem;font-size:.95rem;color:#6c757d;}
+  .order-stepper .is-done .dot{background:var(--ref-deep);color:#fff;}
+  .order-stepper .step.is-done::after{background:var(--ref-deep);}
+  .order-stepper .is-current .dot{box-shadow:0 0 0 4px rgba(14,138,131,.25);}
+
+  @media (min-width:992px){
+    .order-columns{display:flex;align-items:stretch;gap:1.5rem;}
+    .order-columns > .col-lg-8,.order-columns > .col-lg-4{display:flex;flex-direction:column;}
+    .order-columns .card{flex:1;}
+  }
+
+  /* ====== Theme tokens ====== */
+  :root{
+    --brand:#0e8a83;
+    --brand-2:#16c2b3;
+    --danger:#dc3545;
+    --line:#e5efee;
+  }
+
+  /* Cards softness */
+  .card.border-0.shadow-sm{
+    border:1px solid rgba(14,138,131,.10)!important;
+    border-radius:14px!important;
+    background:#ffffffcc!important;
+    backdrop-filter:saturate(120%) blur(2px);
+    transition:none!important; /* no hover lift */
+  }
+  .card.border-0.shadow-sm:hover{
+    transform:none!important;
+    box-shadow:0 2px 10px rgba(0,0,0,.06)!important;
+  }
+
+  /* ====== Payment Card Actions ====== */
+  #payment .btn.btn-success{
+    height:46px;border:0;border-radius:12px;font-weight:800;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));
+    box-shadow:0 8px 18px rgba(14,138,131,.18);
+  }
+  #payment .btn.btn-success:hover{
+    filter:saturate(1.05) brightness(1.02);
+    box-shadow:0 10px 22px rgba(14,138,131,.22);
+  }
+  #downloadVoucherBtn{
+    color:white;
+    height:46px;border:0;border-radius:12px;font-weight:800;
+    background:linear-gradient(90deg,var(--brand),var(--brand-2));
+    box-shadow:0 8px 18px rgba(14,138,131,.18);
+  }
+
+  #downloadVoucherBtn:hover{
+    filter:saturate(1.05) brightness(1.02);
+    box-shadow:0 10px 22px rgba(14,138,131,.22);
+  }
+  #payment .btn.btn-outline-danger{
+    height:44px;border-radius:12px;font-weight:700;
+    color:var(--danger);border:1px solid rgba(220,53,69,.35);
+    background:rgba(220,53,69,.06);
+  }
+  #payment .btn.btn-outline-danger:hover{
+    background:rgba(220,53,69,.12);
+    border-color:var(--danger);
+  }
+  #payment, #payment .card-body, .badge-green {
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  /* ====== Order Total Row ====== */
+  .table tfoot tr{background:#f5fcfb;}
+  .table tfoot th{
+    border-top:2px solid #dbe8e6!important;
+    padding:.9rem 1rem!important;
+    font-weight:800!important;
+    vertical-align:middle;
+  }
+  #orderTotal{
+    display:block!important;
+    text-align:right!important;
+    color:var(--ref-deep);
+    font-weight:800;
+    letter-spacing:.1px;
+  }
+
+  /* ====== Quantity Controls ====== */
+  .qty-wrap{display:inline-flex;align-items:center;gap:.5rem;border:none;padding:0;}
+  .qty-wrap .qty-num{
+    min-width:2rem;text-align:center;
+    font-weight:700;color:#0c1b1c;
+  }
+  .qty-wrap .qty-btn{
+    width:34px;height:34px;
+    display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);border-radius:50%;background:#fff;
+    transition:transform .08s ease,border-color .12s ease,box-shadow .12s ease;
+  }
+  .qty-wrap .qty-btn:hover{
+    border-color:var(--brand-2);
+    box-shadow:0 0 0 3px rgba(22,194,179,.18);
+  }
+  .qty-wrap .qty-btn:active{transform:scale(.96);}
+
+  /* ====== Status Pills ====== */
+  .badge-green{
+    background:rgba(22,194,179,.10)!important;
+    color:var(--brand)!important;
+    border:1px solid rgba(22,194,179,.45)!important;
+    border-radius:999px!important;
+    padding:.38rem .7rem!important;
+    font-weight:800!important;
+    box-shadow:none!important;
+  }
+  .badge-green:has(.fa-clock),
+  .badge-green:has(.fa-hourglass-half){
+    background:rgba(255,176,32,.10)!important;
+    color:#8a6407!important;
+    border-color:rgba(255,176,32,.45)!important;
+  }
+  .badge-green:has(.fa-times){
+    background:rgba(220,53,69,.08)!important;
+    color:#a1252d!important;
+    border-color:rgba(220,53,69,.40)!important;
+  }
+
+  /* ====== Table Header ====== */
+  .table thead th{
+    background:#e9f8f5!important;
+    border-bottom:1px solid var(--line)!important;
+    color:var(--ref-deep)!important;
+    font-weight:600;
+  }
+/* QR presentation */
+.qr-box .qr-img{
+  max-width: 220px;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(14,138,131,.18);
+  box-shadow: 0 8px 18px rgba(14,138,131,.12);
+}
+  /* ====== Modal Theming ====== */
+  #submitPaymentModal .modal-dialog{max-width:820px;}
+  #submitPaymentModal .modal-content{
+    border-radius:16px;border:1px solid rgba(14,138,131,.12);
+    box-shadow:0 20px 36px rgba(12,27,28,.14);overflow:hidden;
+  }
+  #submitPaymentModal .modal-header{
+    background:linear-gradient(90deg,var(--ref-deep),var(--ref-teal));
+    color:#fff;border:0;padding:.9rem 1.1rem;
+  }
+  #submitPaymentModal .modal-title{font-weight:700;}
+  #submitPaymentModal .modal-title i{color:#fff;}
+  #submitPaymentModal .btn-close{filter:invert(1);opacity:.9;}
+  #submitPaymentModal .btn-close:focus{
+    box-shadow:0 0 0 .2rem rgba(255,255,255,.45);
+  }
+  #submitPaymentModal .modal-body{background:#fff;}
+  #submitPaymentModal .form-label{color:#0a615c;font-weight:600;}
+  #submitPaymentModal .form-control{
+    border:1px solid #dbe8e6;border-radius:.7rem;
+  }
+  #submitPaymentModal .form-control:focus{
+    border-color:var(--ref-teal);
+    box-shadow:0 0 0 .2rem rgba(22,194,179,.18);
+  }
+  #submitPaymentModal .modal-footer{
+    background:#f5fcfb;border:0;padding:.9rem 1.1rem;
+  }
+  #submitPaymentModal .btn-primary{
+    background:var(--ref-deep);border-color:var(--ref-deep);
+    border-radius:.8rem;font-weight:700;
+  }
+  #submitPaymentModal .btn-primary:hover{
+    background:var(--ref-teal);border-color:var(--ref-teal);
+  }
+  #submitPaymentModal .btn-outline-secondary{
+    --bs-btn-color:var(--ref-deep);
+    --bs-btn-border-color:rgba(14,138,131,.35);
+    --bs-btn-hover-bg:#ecfffb;
+    --bs-btn-hover-border-color:var(--ref-teal);
+    border-radius:.8rem;font-weight:600;
+  }
+  #payment, #payment .card-body, .badge-green {
+  font-family: sans-serif;
+}
+/* --- Hard stop for page-to-page weird transitions --- */
+
+/* Don’t auto-animate scroll between pages/anchors */
+html { scroll-behavior: auto !important; }
+
+/* If you had any page fade classes, neutralize them */
+.fade-in, .slide-in { animation: none !important; }
+
+/* Keep transitions lightweight (no transform/position changes) */
+a, .nav-link, .btn, .card, .form-control, .dropdown-menu {
+  transition: background-color .12s ease, color .12s ease, border-color .12s ease, box-shadow .12s ease !important;
+}
+
+/* Remove lift/slide effects on hover/focus */
+.navbar .nav-link:hover,
+.card:hover,
+.btn:hover,
+.btn:active {
+  transform: none !important;
+}
+
+/* Quantity buttons: no pop animation on press */
+.qty-wrap .qty-btn,
+.qty-wrap .qty-btn:hover,
+.qty-wrap .qty-btn:active {
+  transform: none !important;
+  transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease !important;
+}
+
+/* If any global “transition: all …” slipped in somewhere, disable transforms */
+*,
+*::before,
+*::after {
+  transition-property: color, background-color, border-color, box-shadow, opacity !important;
+}
+
+/* Optional: if you want to nuke *all* motion entirely, uncomment:
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+*/
+
+</style>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+  (function(){
+    const btn = document.getElementById('openSubmitModalBtn');
+    if (btn) {
+      btn.addEventListener('click', function(){
+        const m = new bootstrap.Modal(document.getElementById('submitPaymentModal'));
+        m.show();
+      });
+    }
+  })();
+
+  function showCenterNotice(msg){
+    const body = document.getElementById('cn-body');
+    if (body && msg) body.textContent = msg;
+    const el = document.getElementById('centerNotice');
+    if (el){
+      el.removeAttribute('hidden');
+      el.setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  window.alert = function(msg){
+  try { showCenterNotice(String(msg ?? 'Notice')); }
+  catch { /* as a last resort, do nothing */ }
+};
+  function hideCenterNotice(){
+    const el = document.getElementById('centerNotice');
+    if (el){
+      el.setAttribute('hidden','');
+      el.setAttribute('aria-hidden','true');
+      document.body.style.overflow = '';
+    }
+  }
+  document.addEventListener('click', (e)=>{
+    const wrap = document.getElementById('centerNotice');
+    if (!wrap || wrap.hasAttribute('hidden')) return;
+    const panel = wrap.querySelector('.panel');
+    if (panel && !panel.contains(e.target)) hideCenterNotice();
+  });
+
+
+  async function changeQty(orderId, medId, delta){
+  try{
+    const res = await fetch(`/buyer/orders/${orderId}/update_item`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ medicine_id: String(medId), delta: Number(delta) })
+    });
+
+    if (!res.ok) {
+      let code = '';
+      try { code = (await res.json()).detail || ''; } catch {}
+      if (code === 'not_editable') {
+        showCenterNotice('This order can’t be edited anymore (already confirmed/paid).');
+        return;
+      }
+      if (code === 'item_not_found') {
+        showCenterNotice('That item is no longer in the order.');
+        return;
+      }
+      showCenterNotice('Sorry, this order can’t be edited right now.');
+      return;
+    }
+
+    const data = await res.json();
+
+    if (data.deleted) { window.location.href = "/buyer/orders"; return; }
+
+    if (data.removed) {
+      const row = document.getElementById(`row-${medId}`);
+      if (row) row.remove();
+      const tbody = document.getElementById('orderBody');
+      if (tbody && !tbody.querySelector('tr')) {
+        const tr = document.createElement('tr');
+        tr.id = 'emptyRow';
+        tr.innerHTML = `<td colspan="4" class="text-center text-muted">No items</td>`;
+        tbody.appendChild(tr);
+      }
+    } else {
+      const qtySpan  = document.getElementById(`qty-${medId}`);
+      const lineSpan = document.getElementById(`line-${medId}`);
+      if (qtySpan)  qtySpan.textContent  = data.quantity;
+      if (lineSpan) lineSpan.textContent = Number(data.line_total).toFixed(2);
+    }
+
+    const totalEl = document.getElementById('orderTotal');
+    if (totalEl) totalEl.textContent = data.formatted_order_total;
+
+  } catch (err) {
+    console.error(err);
+    showCenterNotice('Network error while updating item.');
+  }
+}
+
+</script>
+
+
+
+{% endblock %}

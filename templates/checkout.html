@@ -16,7 +16,7 @@
                         <div class="card bg-light">
                             <div class="card-body">
                                 <p><strong>Order ID:</strong> #{{ order._id|string|truncate(8, True, '...') }}</p>
-                                <p><strong>Total Amount:</strong> <span class="text-success fs-4">₹{{ "%.2f"|format(order.total_amount) }}</span></p>
+                                <p><strong>Total Amount:</strong> <span class="text-success fs-4">{{ "%.2f"|format(order.total_amount) }}Ks</span></p>
                                 <p><strong>Status:</strong> 
                                     <span class="badge bg-warning">{{ order.status.title() }}</span>
                                 </p>
@@ -33,7 +33,7 @@
                             {% for item in order.medicines %}
                             <div class="d-flex justify-content-between border-bottom py-2">
                                 <span>Medicine (Qty: {{ item.quantity }})</span>
-                                <span>₹{{ "%.2f"|format(item.price * item.quantity) }}</span>
+                                <span>{{ "%.2f"|format(item.price * item.quantity) }}Ks</span>
                             </div>
                             {% endfor %}
                         </div>

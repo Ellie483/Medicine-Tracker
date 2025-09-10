@@ -1,18 +1,42 @@
 /* Custom styles for Medicine Availability Tracker */
 
-:root {
-    --primary-color: #0d6efd;
-    --success-color: #198754;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --info-color: #0dcaf0;
-    --light-color: #f8f9fa;
-    --dark-color: #212529;
+:root{
+  --ref-deep:#0e8a83;   /* deep teal */
+  --ref-teal:#16c2b3;   /* bright teal */
+  --ref-mint:#c8f3ea;   /* pale mint */
+  --ink:#0c1b1c;
+  --line:#e6efee;
+  --danger:#dc3545;
 }
 
+/* =========================
+   PAGE BACKGROUND (no min-height)
+   ========================= */
+html, body{
+  height:100%;
+  background: linear-gradient(180deg, var(--ref-mint) 0%, #ffffff 100%) !important;
+  background-attachment: fixed;
+  color: var(--ink);
+  font-family: inherit;
+}
+.app-navbar {
+    background: linear-gradient(90deg, var(--ref-deep), var(--ref-teal));
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
 body {
     background-color: #f5f6fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+
+.overview-cards-row {
+    gap: 2rem;
+}
+.overview-card {
+    min-width: 300px;
+    max-width: 350px;
+    flex: 1 1 300px;
 }
 
 .navbar-brand {
@@ -234,3 +258,126 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #0b5ed7;
 }
+.progress-bar { width: var(--pct); }
+
+/* ===== Palette (teal/mint) ===== */
+
+  
+ 
+  
+  .app-brand{
+    color: var(--white);
+    text-decoration: none;
+    letter-spacing:.2px;
+  }
+  .app-brand:hover{ color:var(--white); }
+  
+  .brand-bubble{
+    width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center;
+    background: rgba(255,255,255,.18);
+    color:#fff; border-radius: 10px; /* softer than circle */
+  }
+  
+  /* Left nav links */
+  .app-nav .nav-link{
+    color: #ecfffb;
+    opacity:.92;
+    padding:.5rem .9rem;
+    border-radius: .7rem;
+    transition: background .12s ease; /* reduced motion */
+  }
+  .app-nav .nav-link:hover,
+  .app-nav .nav-link.active{
+    background: rgba(255,255,255,.14);
+    color:#fff;
+  }
+  
+  /* Right-side icon links (bell/user) */
+  .app-icon-link{
+    color:#ecfffb;
+    padding:.35rem .55rem;
+    border-radius:.7rem;
+    transition: background .12s ease; /* reduced */
+  }
+  .app-icon-link:hover{ background: rgba(255,255,255,.14); color:#fff; }
+  .app-icon-link .fa-bell{ font-size: 1.25rem; }
+  
+  /* Notification badge position */
+  .app-badge{
+    top: .15rem;
+    right: .2rem;
+    transform: translate(35%,-35%); /* gentle offset */
+    font-size:.7rem;
+  }
+  
+  /* Avatar */
+  .avatar-circle{
+    width:30px; height:30px; border-radius:10px;
+    display:inline-flex; align-items:center; justify-content:center;
+    background:#fff; color: var(--brand-700);
+  }
+  
+  /* Dropdowns */
+  .app-dd{
+    border: 1px solid rgba(0,0,0,.06);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  
+  /* Remove heavy transforms from Bootstrap hover helpers */
+  .navbar .nav-link{ transform:none !important; }
+  
+  /* Active link by URL (JS sets .active) */
+  .navbar .nav-link.active{
+    background: rgba(255,255,255,.18);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+  }
+  
+  /* Optional: subtle page bg to match palette */
+  body{
+    background: linear-gradient(180deg, #ffffff 0%, var(--brand-100) 100%);
+    background-attachment: fixed;
+  }
+  /* Kill heavy transforms */
+  .navbar .nav-link{ transform:none !important; }
+  /* --- Hard stop for page-to-page weird transitions --- */
+
+/* Don’t auto-animate scroll between pages/anchors */
+html { scroll-behavior: auto !important; }
+
+/* If you had any page fade classes, neutralize them */
+.fade-in, .slide-in { animation: none !important; }
+
+/* Keep transitions lightweight (no transform/position changes) */
+a, .nav-link, .btn, .card, .form-control, .dropdown-menu {
+  transition: background-color .12s ease, color .12s ease, border-color .12s ease, box-shadow .12s ease !important;
+}
+
+/* Remove lift/slide effects on hover/focus */
+.navbar .nav-link:hover,
+.card:hover,
+.btn:hover,
+.btn:active {
+  transform: none !important;
+}
+
+/* Quantity buttons: no pop animation on press */
+.qty-wrap .qty-btn,
+.qty-wrap .qty-btn:hover,
+.qty-wrap .qty-btn:active {
+  transform: none !important;
+  transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease !important;
+}
+
+/* If any global “transition: all …” slipped in somewhere, disable transforms */
+*,
+*::before,
+*::after {
+  transition-property: color, background-color, border-color, box-shadow, opacity !important;
+}
+
+/* Optional: if you want to nuke *all* motion entirely, uncomment:
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+*/

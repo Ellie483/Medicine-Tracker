@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+{% block title %}Orders · Pharmacy{% endblock %}
+
+{% macro status_chip(s) -%}
+  {% set s = (s or 'pending')|lower %}
+  {% if s == 'delivered' %}
+    <span class="badge rounded-pill bg-success"><i class="fas fa-box-open me-1"></i>Delivered</span>
+  {% elif s == 'confirmed' %}
+    <span class="badge rounded-pill bg-primary"><i class="fas fa-check me-1"></i>Confirmed</span>
+  {% elif s in ['pending','placed'] %}
+    <span class="badge rounded-pill bg-warning text-dark"><i class="fas fa-clock me-1"></i>Pending</span>
+  {% elif s == 'cart' %}
+    <span class="badge rounded-pill bg-secondary"><i class="fas fa-shopping-basket me-1"></i>Cart</span>
+  {% else %}
+    <span class="badge rounded-pill bg-light text-dark">{{ s|title }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro payment_chip(s) -%}
+  {% set s = (s or 'unpaid')|lower %}
+  {% if s == 'paid' %}
+    <span class="badge rounded-pill bg-success"><i class="fas fa-check me-1"></i>Paid</span>
+  {% elif s == 'proof_uploaded' %}
+    <span class="badge rounded-pill bg-info text-dark"><i class="fas fa-hourglass-half me-1"></i>Under Review</span>
+  {% elif s == 'rejected' %}
+    <span class="badge rounded-pill bg-danger"><i class="fas fa-times me-1"></i>Rejected</span>
+  {% else %}
+    <span class="badge rounded-pill bg-warning text-dark"><i class="fas fa-credit-card me-1"></i>Unpaid</span>
+  {% endif %}
+{%- endmacro %}
+
+{% block content %}
+<div class="container-xxl py-3">
+  <!-- Header -->
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
+    <div>
+      <h2 class="h3 mb-1"><i class="fas fa-boxes me-2 text-primary"></i>Orders</h2>
+      <p class="text-muted mb-0">Review, confirm payments, and mark deliveries.</p>
+    </div>
+    <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill px-3 py-2">
+      <i class="fas fa-list me-1"></i>{{ orders|length }} total
+    </span>
+  </div>
+
+  <!-- Filters -->
+  <form class="row g-2 mb-3" method="get">
+    <div class="col-lg-4">
+      <div class="input-group">
+        <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+        <input name="q" value="{{ request.query_params.get('q','') }}" class="form-control"
+               placeholder="Search by buyer, medicine, payment id…">
+      </div>
+    </div>
+
+    <div class="col-6 col-lg-2">
+      {% set sel_status = status or request.query_params.get('status','') %}
+      <select name="status" class="form-select">
+        <option value="">Any status</option>
+        {% for s in ['cart','pending','confirmed','delivered'] %}
+          <option value="{{ s }}" {{ 'selected' if sel_status==s else '' }}>{{ s|title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-6 col-lg-2">
+      {% set sel_payment = payment or request.query_params.get('payment','') %}
+      <select name="payment" class="form-select">
+        <option value="">Any payment</option>
+        {% for p in ['unpaid','proof_uploaded','rejected','paid'] %}
+          <option value="{{ p }}" {{ 'selected' if sel_payment==p else '' }}>{{ p|replace('_',' ')|title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-6 col-lg-2">
+      {% set sort = request.query_params.get('sort','created_desc') %}
+      <select name="sort" id="sortSelect" class="form-select">
+        <option value="created_desc" {{ 'selected' if sort=='created_desc' else '' }}>Newest First</option>
+        <option value="created_asc"  {{ 'selected' if sort=='created_asc'  else '' }}>Oldest First</option>
+        <option value="total_desc"   {{ 'selected' if sort=='total_desc'   else '' }}>Amount: High → Low</option>
+        <option value="total_asc"    {{ 'selected' if sort=='total_asc'    else '' }}>Amount: Low → High</option>
+      </select>
+    </div>
+
+    <div class="col-6 col-lg-2 d-grid">
+      <button class="btn btn-primary"><i class="fas fa-filter me-1"></i>Apply</button>
+    </div>
+  </form>
+
+  {% if orders and orders|length %}
+    <div class="row g-3">
+      {% for o in orders %}
+        {% set items = o.get('items', []) %}
+        {% set first_name = (items[0]['medicine_name'] if items|length else '—') %}
+        {# robust qty total even if quantity missing #}
+        {% set qty_total = items|map(attribute='quantity')|select|sum if items|length else 0 %}
+
+        <div class="col-12 col-xl-6">
+          <article class="card border-0 shadow-sm h-100 order-card">
+            <div class="card-body d-flex flex-column gap-3">
+
+              <!-- Date + Order ID -->
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                  <i class="fas fa-calendar me-1"></i>{{ o.created_at_str or o.created_at or '—' }}
+                </div>
+                <a class="small text-decoration-none" href="/seller/orders/{{ o._id }}">
+                  Order #{{ o._id }}
+                </a>
+              </div>
+
+              <!-- Status / Payment chips -->
+              <div class="d-flex flex-wrap gap-2">
+                {{ status_chip(o.order_status) }}
+                {{ payment_chip(o.payment_status) }}
+              </div>
+
+              <!-- Total + Buyer -->
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="fw-semibold fs-5 text-success">{{ o.formatted_total or '0.00Ks' }}</div>
+                <span class="small text-muted">
+                  <i class="fas fa-user me-1"></i>Buyer:
+                  {{ (o.buyer_display or '').strip() or '—' }}
+                </span>
+              </div>
+
+              <!-- Items summary -->
+              <div class="small">
+                <i class="fas fa-box me-1 text-muted"></i>
+                {% if items|length == 0 %}
+                  No items
+                {% elif items|length == 1 %}
+                  {{ first_name }} · Qty {{ qty_total }}
+                {% else %}
+                  {{ first_name }} · Qty {{ qty_total }}
+                  <span class="text-muted">+{{ items|length - 1 }} more</span>
+                {% endif %}
+              </div>
+
+              {% if o.address or o.city %}
+              <div class="small text-muted">
+                <i class="fas fa-location-dot me-1"></i>{{ o.address or '' }}{% if o.city %}, {{ o.city }}{% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Actions -->
+              <div class="mt-auto d-flex gap-2">
+                <a class="btn btn-outline-secondary flex-fill" href="/seller/orders/{{ o._id }}">
+                  <i class="fas fa-eye me-1"></i>Open
+                </a>
+                {% if o.payment_status == 'proof_uploaded' %}
+                <a class="btn btn-success flex-fill" href="/seller/orders/{{ o._id }}#actions">
+                  <i class="fas fa-check me-1"></i>Review Payment
+                </a>
+                {% endif %}
+              </div>
+
+            </div>
+          </article>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-5">
+      <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+      <h3 class="fw-semibold mb-1">No orders</h3>
+      <p class="text-muted mb-0">Try adjusting the filters above.</p>
+    </div>
+  {% endif %}
+</div>
+
+<style>
+  /* ===== Theme tokens (teal/mint) ===== */
+  :root{
+    --ref-deep:#0e8a83;    /* deep teal */
+    --ref-teal:#16c2b3;    /* bright teal */
+    --ref-mint:#c8f3ea;    /* pale mint */
+    --ink:#0c1b1c;
+    --line:#e6efee;
+  }
+  
+  /* ===== Page background (subtle) ===== */
+  html, body {
+  height: 100%; /* let html stretch to full viewport */
+  background: linear-gradient(180deg, var(--ref-mint) 0%, #ffffff 100%) !important;
+  background-attachment: fixed;
+}
+
+  
+  /* ===== Cards ===== */
+  .order-card{
+    border:1px solid rgba(14,138,131,.10)!important;
+    border-radius:14px!important;
+    background:#ffffffcc!important;
+    backdrop-filter:saturate(120%) blur(2px);
+    transition: box-shadow .15s ease; /* no lifting */
+  }
+  .order-card:hover{
+    box-shadow:0 14px 26px rgba(12,27,28,.08);
+  }
+  
+  /* ===== Header count pill ===== */
+  .bg-success-subtle{
+    background:#ecfffb !important;
+  }
+  .text-success-emphasis{
+    color:#0a615c !important;
+  }
+  .border-success-subtle{
+    border-color:rgba(14,138,131,.22) !important;
+  }
+  
+  /* ===== Filters (inputs/selects) ===== */
+  .input-group-text{
+    background:#fff !important;
+    border:1px solid var(--line) !important;
+    border-right:none !important;
+    color:#5b6a6a;
+  }
+  .form-control, .form-select{
+    border:1px solid var(--line);
+    border-radius:.75rem;
+  }
+  .form-control:focus, .form-select:focus{
+    border-color: var(--ref-teal);
+    box-shadow: 0 0 0 .2rem rgba(22,194,179,.18);
+  }
+  
+  /* ===== Totals & buyer line ===== */
+  .card .fs-5{
+    color: var(--ref-deep);
+    font-weight:800;
+  }
+  .card .text-muted.small i{
+    color:#7f8d8e;
+  }
+  
+  /* ===== Status & Payment chips (pretty transparent pills) ===== */
+  .badge.rounded-pill{
+    border-radius:999px !important;
+    padding:.42rem .75rem !important;
+    font-weight:800 !important;
+    border:1px solid transparent;
+  }
+  .badge.bg-success{
+    background: rgba(25,195,125,.12) !important;
+    color:#0b6b3f !important;
+    border-color: rgba(25,195,125,.45) !important;
+  }
+  .badge.bg-primary{
+    background: rgba(14,138,131,.12) !important;
+    color: var(--ref-deep) !important;
+    border-color: rgba(14,138,131,.45) !important;
+  }
+  .badge.bg-warning{
+    background: rgba(255,176,32,.14) !important;
+    color:#8a6407 !important;
+    border-color: rgba(255,176,32,.45) !important;
+  }
+  .badge.bg-secondary{
+    background:#f2f5f6 !important;
+    color:#415152 !important;
+    border-color:#dbe3e4 !important;
+  }
+  .badge.bg-info{
+    background: rgba(22,194,179,.12) !important;
+    color: var(--ref-deep) !important;
+    border-color: rgba(22,194,179,.45) !important;
+  }
+  .badge.bg-danger{
+    background: rgba(220,53,69,.10) !important;
+    color:#a1252d !important;
+    border-color: rgba(220,53,69,.40) !important;
+  }
+  .badge.bg-light{
+    background:#f4f8f7 !important;
+    color:#0d4b47 !important;
+    border-color: rgba(14,138,131,.14) !important;
+  }
+  
+  /* ===== Buttons ===== */
+  .btn-primary{
+    background: linear-gradient(90deg, var(--ref-deep), var(--ref-teal));
+    border:0;
+    border-radius:.8rem;
+    font-weight:800;
+    box-shadow: 0 8px 18px rgba(14,138,131,.18);
+  }
+  .btn-primary:hover{
+    filter: saturate(1.05) brightness(1.02);
+    box-shadow: 0 12px 26px rgba(14,138,131,.22);
+  }
+  .btn-success{
+    background: linear-gradient(90deg, var(--ref-deep), var(--ref-teal));
+    border:0;
+    border-radius:.8rem;
+    font-weight:800;
+    box-shadow: 0 8px 18px rgba(14,138,131,.18);
+  }
+  .btn-success:hover{
+    filter: saturate(1.05) brightness(1.02);
+    box-shadow: 0 12px 26px rgba(14,138,131,.22);
+  }
+  .btn-outline-secondary{
+    --bs-btn-color: var(--ref-deep);
+    --bs-btn-border-color: rgba(14,138,131,.35);
+    --bs-btn-hover-bg: #ecfffb;
+    --bs-btn-hover-border-color: var(--ref-teal);
+    border-radius:.8rem;
+    font-weight:700;
+  }
+  
+  /* ===== Links (Order #) ===== */
+  a.small.text-decoration-none{
+    color: var(--ref-deep);
+  }
+  a.small.text-decoration-none:hover{
+    color: var(--ref-teal);
+    text-decoration: underline;
+  }
+  
+  /* ===== Empty state ===== */
+  .text-center.py-5 .fa-inbox{ color:#9fb7b4 !important; }
+  .text-center.py-5 h3{ color:#274948; }
+  
+  /* ===== Gentle motion only (no vertical jump) ===== */
+  .order-card,
+  .btn { transition: box-shadow .16s ease, background-color .16s ease, color .16s ease, border-color .16s ease; }
+
+ /* ===== Normalize font across key UI bits ===== */
+.card .fs-5,                /* price text */
+.badge.rounded-pill,        /* status/payment chips */
+.btn,                       /* all buttons */
+.form-select, .form-control /* filter inputs */
+{
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+  font-weight: 600 !important; /* balanced semi-bold */
+  font-size: 0.95rem;          /* consistent sizing */
+  letter-spacing: .1px;
+}
+
+/* Make price stand out a bit more */
+.card .fs-5 {
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+}
+
+/* Adjust Apply button specifically */
+.btn-primary {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+}
+  </style>
+  
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+  const form = document.querySelector('form[method="get"]');
+  if (!form) return;
+  form.querySelectorAll('select').forEach(sel => {
+    sel.addEventListener('change', () => form.submit());
+  });
+  const q = form.querySelector('input[name="q"]');
+  if (q) q.addEventListener('keydown', e => { if (e.key === 'Enter') form.submit(); });
+})();
+</script>
+{% endblock %}
