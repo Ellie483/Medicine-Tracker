@@ -1,27 +1,18 @@
-<<<<<<< HEAD
 from fastapi import APIRouter, Request, Form, UploadFile, File, HTTPException
-=======
-from fastapi import APIRouter, Request, Form
 import requests
->>>>>>> d96a65a1c1ff7b346982beedfd323114f9fc9266
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from datetime import datetime
 from database import get_database
 from passlib.context import CryptContext
-<<<<<<< HEAD
-import requests
 import os
 import shutil
-=======
 from math import sqrt, cos
 import re
->>>>>>> d96a65a1c1ff7b346982beedfd323114f9fc9266
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
-<<<<<<< HEAD
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -31,28 +22,13 @@ def get_password_hash(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-def geocode_address(address: str):
-    """Geocode an address using OpenStreetMap Nominatim API."""
-    url = "https://nominatim.openstreetmap.org/search"
-    params = {"q": address, "format": "json", "limit": 1}
-    try:
-        response = requests.get(url, params=params, headers={"User-Agent": "MedicineTracker/1.0"}, timeout=5)
-        data = response.json()
-        if data:
-            return float(data[0]["lat"]), float(data[0]["lon"])
-    except Exception:
-        pass
-    return None, None
-
 @router.get("/register")
-=======
+def register_role_selection(request: Request):  # ADD THIS FUNCTION
+    return templates.TemplateResponse("register_role_selection.html", {"request": request})
 # -----------------------------
 # Password context
 # -----------------------------
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
 
 # -----------------------------
 # Myanmar township list
@@ -173,10 +149,6 @@ def get_nearest_pharmacies(user_township, user_lat, user_lon, db, limit=5):
 # -----------------------------
 # Registration routes
 # -----------------------------
-@router.get("/register", response_class=RedirectResponse)
->>>>>>> d96a65a1c1ff7b346982beedfd323114f9fc9266
-def register_role_selection(request: Request):
-    return templates.TemplateResponse("register_role_selection.html", {"request": request})
 
 @router.get("/register/seller")
 def register_seller_form(request: Request):
@@ -317,16 +289,9 @@ async def register_seller(
 def register_buyer_form(request: Request):
     return templates.TemplateResponse("register_buyer.html", {"request": request})
 
-<<<<<<< HEAD
-=======
-@router.get("/register/seller")
-def register_seller_form(request: Request):
-    return templates.TemplateResponse("register_seller.html", {"request": request})
-
 # -----------------------------
 # Buyer registration
 # -----------------------------
->>>>>>> d96a65a1c1ff7b346982beedfd323114f9fc9266
 @router.post("/register/buyer")
 def register_buyer(
     request: Request,
@@ -338,14 +303,10 @@ def register_buyer(
 ):
     db = get_database()
     if db.users.find_one({"username": username}):
-<<<<<<< HEAD
         return templates.TemplateResponse("register_buyer.html", {
             "request": request,
             "error": "Username already exists."
         })
-=======
-        return templates.TemplateResponse("register_buyer.html", {"request": request, "error": "Username already exists."})
->>>>>>> d96a65a1c1ff7b346982beedfd323114f9fc9266
 
     township, lat, lon = geocode_address(address)
     if not township:
@@ -359,61 +320,16 @@ def register_buyer(
         "name": name,
         "age": age,
         "address": address,
-<<<<<<< HEAD
-=======
         "township": township,
         "coordinates": {"latitude": lat, "longitude": lon} if lat and lon else {},
         "favorite_pharmacies": [],
->>>>>>> d96a65a1c1ff7b346982beedfd323114f9fc9266
         "created_at": datetime.utcnow()
     }
     db.buyer_profiles.insert_one(buyer_profile_data)
 
     return RedirectResponse(url="/?registered=buyer", status_code=302)
-<<<<<<< HEAD
-=======
 
-# -----------------------------
-# Seller registration
-# -----------------------------
-@router.post("/register/seller")
-def register_seller(
-    request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
-    pharmacy_name: str = Form(...),
-    license_number: str = Form(...),
-    contact_info: str = Form(...),
-    address: str = Form(...),
-    operating_hours: str = Form(...)
-):
-    db = get_database()
-    if db.users.find_one({"username": username}):
-        return templates.TemplateResponse("register_seller.html", {"request": request, "error": "Username already exists."})
-    if db.pharmacy_profiles.find_one({"license_number": license_number}):
-        return templates.TemplateResponse("register_seller.html", {"request": request, "error": "License number already exists."})
-
-    township, lat, lon = geocode_address(address)
-    if not township:
-        return templates.TemplateResponse("register_seller.html", {"request": request, "error": "Address must include a valid Myanmar township."})
-
-    user_data = {"username": username, "password": get_password_hash(password), "role": "seller", "is_profile_complete": True, "created_at": datetime.utcnow()}
-    user_result = db.users.insert_one(user_data)
-
-    pharmacy_profile_data = {
-        "user_id": str(user_result.inserted_id),
-        "pharmacy_name": pharmacy_name,
-        "license_number": license_number,
-        "contact_info": contact_info,
-        "address": address,
-        "township": township,
-        "coordinates": {"latitude": lat, "longitude": lon} if lat and lon else {},
-        "operating_hours": operating_hours,
-        "created_at": datetime.utcnow()
-    }
-    db.pharmacy_profiles.insert_one(pharmacy_profile_data)
-
-    return RedirectResponse(url="/?registered=seller", status_code=302)
+ 
 
 # -----------------------------
 # Login route
@@ -442,4 +358,3 @@ async def login(request: Request, username: str = Form(...), password: str = For
 async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/")
->>>>>>> d96a65a1c1ff7b346982beedfd323114f9fc9266
