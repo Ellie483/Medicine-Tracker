@@ -21,6 +21,7 @@ from routes import (
     page_routes,
     notification_routes,  # must export `router`
 )
+
 from routes.init_routes import init_default_users
 
 # ---- db ----

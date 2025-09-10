@@ -153,13 +153,8 @@ def get_nearest_pharmacies(user_township, user_lat, user_lon, db, limit=5):
 @router.get("/register/seller")
 def register_seller_form(request: Request):
     townships = [
-        "Ahlone", "Bahan", "Dagon", "Dawbon", "Hlaing", "Insein", "Kamayut", "Kawhmu",
-        "Kyeemyindaing", "Kyauktada", "Lanmadaw", "Latha", "Mayangone", "Mingaladon",
-        "Mingalartaungnyunt", "North Okkalapa", "North Dagon", "Pabedan", "Pazundaung",
-        "Sanchaung", "Shwepyitha", "South Okkalapa", "South Dagon", "Seikkyi Kanaungto",
-        "Tamwe", "Thaketa", "Thingangyun", "Thuwanna", "Twante", "Dala", "Hmawbi",
-        "Hlegu", "Htantabin", "Htantha", "Kyaukse", "Kyaukpyu", "Kyaunggone", "Mawlamyine",
-        "Myingyan", "Yankin"
+        "Ahlone", "Bahan", "Dagon", "Dawbon", "Hlaing", "Insein", "Kamayut", "Kyeemyindaing", "Kyauktada", "Lanmadaw", "Latha", "Mayangone", "Mingaladon",
+        "Mingalartaungnyunt", "North Okkalapa", "North Dagon", "Pabedan", "Pazundaung", "Sanchaung", "Shwepyithar", "South Okkalapa", "South Dagon", "Tamwe", "Thaketa", "Thingangyun", "Yankin"
     ]
     days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     return templates.TemplateResponse("register_seller.html", {"request": request, "townships": townships, "days": days})
@@ -347,7 +342,7 @@ async def login(request: Request, username: str = Form(...), password: str = For
     elif user["role"] == "seller":
         return RedirectResponse(url="/seller/home", status_code=302)
     elif user["role"] == "admin":
-        return RedirectResponse(url="/admin_dashboard", status_code=302)
+        return RedirectResponse(url="/admin/dashboard", status_code=302)
     else:
         return templates.TemplateResponse("login.html", {"request": request, "error": "Unknown user role"})
 
