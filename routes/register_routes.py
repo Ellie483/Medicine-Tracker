@@ -157,7 +157,7 @@ async def login(
         print("➡️ Redirecting seller to /seller/home")
         return RedirectResponse(url="/seller/home", status_code=302)
     elif user["role"] == "admin":
-        return RedirectResponse(url="/admin_dashboard", status_code=302)
+        return RedirectResponse(url="/admin/dashboard", status_code=302)
     else:
         print("⚠️ Unknown role for:", username)
         return templates.TemplateResponse("login.html", {

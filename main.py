@@ -15,6 +15,7 @@ from routes import (
     order_routes,
     page_routes
 )
+
 from routes.init_routes import init_default_users
 
 app = FastAPI(title="Medicine Availability Tracker", version="1.0.0")

@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Pharmacies{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --ref-deep: #0e8a83;
+        --ref-teal: #16c2b3;
+        --ref-mint: #c8f3ea;
+        --ink: #0c1b1c;
+        --line: #e6efee;
+        --danger: #dc3545;
+    }
+
+    html, body {
+        height: 100%;
+        background-color: var(--ref-mint);
+        color: var(--ink);
+        font-family: inherit;
+        scroll-behavior: smooth;
+    }
+
+    nav.navbar {
+        background-color: var(--ref-deep) !important;
+    }
+    nav.navbar .nav-link, nav.navbar .navbar-brand {
+        color: white !important;
+    }
+    nav.navbar .nav-link:hover {
+        background-color: var(--ref-teal) !important;
+        border-radius: 5px;
+    }
+
+    .card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        background-color: white;
+        overflow: hidden; /* ensures children don’t overflow rounded corners */
+    }
+
+    .card-header {
+        background-color: var(--ref-teal);
+        color: white;
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+    }
+
+    .card-body {
+        padding: 0; /* removes extra space so table aligns with rounded card */
+    }
+
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .table-fixed th, .table-fixed td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
+        padding: 12px 8px;
+    }
+    .table-fixed th {
+        background-color: var(--ref-teal);
+        color: white;
+    }
+
+    #pharmacyTable tbody tr:hover {
+        background-color: #f2f2f2;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Search box with cross icon */
+    #pharmacySearch {
+        border-radius: 12px;
+        padding-right: 30px;
+    }
+
+    #clearSearch {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-weight: bold;
+        color: #888;
+        display: none;
+    }
+
+    #backToTop {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        display: none; /* hidden by default */
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        background-color: var(--ref-deep);  /* deep teal */
+        color: white;
+        border: none;
+    }
+    #backToTop:hover {
+        background-color: #2bd1c8; /* slightly darker teal on hover */
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if top_pharmacies %}
+<div class="text-center my-5">
+    <h3 class="fw-bold mb-4">🏆 Top 3 Best-Selling Pharmacies 🏆</h3>
+
+    <div class="d-flex justify-content-center align-items-end gap-4">
+        <!-- 2nd Place (Silver) -->
+        <div class="text-center">
+            {% if top_pharmacies|length > 1 %}
+            <img src="https://cdn-icons-png.flaticon.com/512/2583/2583388.png" alt="Silver Medal" width="40" class="mb-2">
+            <div class="bg-secondary text-white rounded-top d-flex justify-content-center align-items-center"
+                 style="width:100px; height:160px; font-weight:bold; font-size:1.2rem;">
+                {{ top_pharmacies[1].totalSales }}
+            </div>
+            <div class="mt-2">
+                <div class="fw-semibold">2nd</div>
+                <div>{{ top_pharmacies[1].pharmacyName }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 1st Place (Gold) -->
+        <div class="text-center">
+            {% if top_pharmacies|length > 0 %}
+            <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png" alt="Gold Medal" width="50" class="mb-2">
+            <div class="bg-warning text-dark rounded-top d-flex justify-content-center align-items-center"
+                 style="width:120px; height:200px; font-weight:bold; font-size:1.4rem;">
+                {{ top_pharmacies[0].totalSales }}
+            </div>
+            <div class="mt-2">
+                <div class="fw-bold">1st</div>
+                <div>{{ top_pharmacies[0].pharmacyName }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 3rd Place (Bronze) -->
+        <div class="text-center">
+            {% if top_pharmacies|length > 2 %}
+            <img src="https://cdn-icons-png.flaticon.com/512/2583/2583364.png" alt="Bronze Medal" width="35" class="mb-2">
+            <div style="background-color:#cd7f32; color:white;"
+                 class="rounded-top d-flex justify-content-center align-items-center"
+                 style="width:90px; height:140px; font-weight:bold; font-size:1.1rem;">
+                {{ top_pharmacies[2].totalSales }}
+            </div>
+            <div class="mt-2">
+                <div class="fw-semibold">3rd</div>
+                <div>{{ top_pharmacies[2].pharmacyName }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endif %}
+
+<!-- Pharmacies Table -->
+{% if pharmacies %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-store me-2"></i>Registered Pharmacies</h2>
+                <!-- Search Bar with Clear Icon -->
+                <div style="position: relative; width: 25%;">
+                    <input type="text" id="pharmacySearch" class="form-control" placeholder="Search by name or license...">
+                    <span id="clearSearch">&times;</span>
+                </div>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-fixed" id="pharmacyTable">
+                    <thead>
+                        <tr>
+                            <th>Pharmacy Name</th>
+                            <th>License Number</th>
+                            <th>Contact Info</th>
+                            <th>Address</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pharmacy in pharmacies %}
+                        <tr>
+                            <td>{{ pharmacy.pharmacy_name }}</td>
+                            <td>{{ pharmacy.license_number }}</td>
+                            <td>{{ pharmacy.contact_info }}</td>
+                            <td>{{ pharmacy.address }}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#pharmacyModal{{ pharmacy._id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+
+                                <form method="post" action="/admin/remove_pharmacy/{{ pharmacy._id }}" class="d-inline" 
+                                    onsubmit="return confirm('Are you sure?')">
+                                    <input type="hidden" name="next" value="pharmacies_dashboard_admin">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<p class="text-center">No pharmacies found.</p>
+{% endif %}
+
+<!-- Modals for Pharmacies -->
+{% if pharmacies %}
+{% for pharmacy in pharmacies %}
+<div class="modal fade" id="pharmacyModal{{ pharmacy._id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: var(--ref-teal); color:white;">
+        <h5 class="modal-title">{{ pharmacy.pharmacy_name }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>License Number:</strong> {{ pharmacy.license_number }}</p>
+        <p><strong>Contact Info:</strong> {{ pharmacy.contact_info }}</p>
+        <p><strong>Address:</strong> {{ pharmacy.address }}</p>
+        <p><strong>Operating Hours:</strong> {{ pharmacy.operating_hours }}</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post" action="/admin/remove_pharmacy/{{ pharmacy._id }}" class="me-auto" onsubmit="return confirm('Are you sure?')">
+            <input type="hidden" name="next" value="pharmacies_dashboard_admin">
+            <button type="submit" class="btn btn-danger">Delete Pharmacy</button>
+        </form>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Back to Top Button -->
+<button id="backToTop" title="Back to Top" class="btn">
+    <i class="fas fa-arrow-up" style="color:white;"></i>
+</button>
+
+<!-- Search Script with Clear Icon -->
+<script>
+const searchInput = document.getElementById("pharmacySearch");
+const clearBtn = document.getElementById("clearSearch");
+
+searchInput.addEventListener("keyup", function() {
+    const value = this.value.toLowerCase().replace(/\s+/g, '');
+    clearBtn.style.display = this.value ? "block" : "none";
+
+    const rows = document.querySelectorAll("#pharmacyTable tbody tr");
+    rows.forEach(row => {
+        const name = row.cells[0].textContent.toLowerCase().replace(/\s+/g, '');
+        const license = row.cells[1].textContent.toLowerCase().replace(/\s+/g, '');
+        row.style.display = (name.includes(value) || license.includes(value)) ? "" : "none";
+    });
+});
+
+// Clear input when clicking the cross
+clearBtn.addEventListener("click", function() {
+    searchInput.value = "";
+    clearBtn.style.display = "none";
+    searchInput.dispatchEvent(new Event('keyup')); // trigger search to show all rows
+});
+
+backToTopBtn.addEventListener("click", function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+</script>
+
+{% endblock %}
